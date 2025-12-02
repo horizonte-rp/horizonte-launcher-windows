@@ -12,7 +12,7 @@ header('Access-Control-Allow-Origin: *');
 // Configuração do Launcher
 $config = [
     // Versão atual do launcher (altere quando lançar nova versão)
-    'version' => '1.0.5',
+    'version' => '1.0.6',
 
     // URL para download da nova versão (quando disponível)
     'updateUrl' => 'http://horizontegames.com/api/downloads/Horizonte%20Launcher.exe',
