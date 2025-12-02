@@ -1,6 +1,6 @@
 {
   "name": "horizonte-launcher",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Launcher para servidores SA-MP Horizonte",
   "main": "src/main.js",
   "scripts": {
