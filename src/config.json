@@ -1,0 +1,119 @@
+{
+  "howToPlayUrl": "http://horizontegames.com/howtoplay.php",
+  "categories": {
+    "rp": {
+      "name": "Horizonte RP",
+      "folderName": "Horizonte RP",
+      "enabled": true,
+      "download": {
+        "url": "https://horizonte-rp.com/assets/game.zip",
+        "version": "1.0.0",
+        "size": 1073741824
+      },
+      "servers": [
+        {
+          "id": 0,
+          "name": "Localhost (Teste)",
+          "ip": "127.0.0.1",
+          "port": 7777,
+          "maxPlayers": 100,
+          "discord": ""
+        },
+        {
+          "id": 1,
+          "name": "Horizonte RP #1",
+          "ip": "149.56.252.173",
+          "port": 7777,
+          "maxPlayers": 600,
+          "discord": "https://discord.com/invite/GmrQbRAvrP"
+        },
+        {
+          "id": 2,
+          "name": "Horizonte RP #2",
+          "ip": "51.222.228.151",
+          "port": 7777,
+          "maxPlayers": 600,
+          "discord": "https://discord.gg/zb2RfgwKvJ"
+        },
+        {
+          "id": 3,
+          "name": "Horizonte RP #3",
+          "ip": "54.39.38.150",
+          "port": 7777,
+          "maxPlayers": 600,
+          "discord": "https://discord.gg/wWpzCGwbve"
+        },
+        {
+          "id": 4,
+          "name": "Horizonte RP #4",
+          "ip": "149.56.155.127",
+          "port": 7777,
+          "maxPlayers": 600,
+          "discord": "https://discord.gg/ApWCz9pqqa"
+        }
+      ]
+    },
+    "dm": {
+      "name": "Horizonte DM",
+      "folderName": "Horizonte DM",
+      "enabled": false,
+      "download": {
+        "url": "",
+        "version": "",
+        "size": 0
+      },
+      "servers": []
+    },
+    "dayz": {
+      "name": "Horizonte DayZ",
+      "folderName": "Horizonte DayZ",
+      "enabled": false,
+      "download": {
+        "url": "",
+        "version": "",
+        "size": 0
+      },
+      "servers": []
+    }
+  },
+  "social": {
+    "site": "https://horizonte.com/ucp",
+    "youtube": "https://youtube.com/@horizonterp",
+    "instagram": "https://instagram.com/horizontegamesrp",
+    "tiktok": "https://tiktok.com/@horizontegamesrp",
+    "whatsapp": "https://whatsapp.com/channel/0029VasuRhn0AgWD4qkkXp05",
+    "discord": "https://discord.gg/hzrp"
+  },
+  "news": [
+    {
+      "id": 1,
+      "title": "Atualização de Halloween chegou!",
+      "description": "Novos eventos e recompensas exclusivas",
+      "image": "assets/images/bg1.png",
+      "link": "https://horizonte.com.br/news/halloween",
+      "date": "2024-10-31"
+    },
+    {
+      "id": 2,
+      "title": "Horizonte 1 Ano!",
+      "description": "Celebrando nosso primeiro aniversário",
+      "image": "assets/images/bg2.png",
+      "link": "https://horizonte.com.br/news/aniversario",
+      "date": "2024-11-01"
+    },
+    {
+      "id": 3,
+      "title": "Horizonte 2 Anos!",
+      "description": "Celebrando nosso primeiro aniversário",
+      "image": "assets/images/bg3.png",
+      "link": "https://horizonte.com.br/news/aniversario",
+      "date": "2024-11-01"
+    }
+  ],
+  "launcher": {
+    "version": "1.0.0",
+    "autoUpdate": true,
+    "updateUrl": "https://horizonte.com.br/launcher/update",
+    "sampDllUrl": "https://horizonte.com.br/launcher/samp.dll"
+  }
+}

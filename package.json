@@ -1,0 +1,75 @@
+{
+  "name": "horizonte-launcher",
+  "version": "1.0.5",
+  "description": "Launcher para servidores SA-MP Horizonte",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "set \"ELECTRON_RUN_AS_NODE=\" && electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win"
+  },
+  "author": "Horizonte Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "png-to-ico": "^3.0.1",
+    "rcedit": "^4.0.1",
+    "sharp": "^0.34.5",
+    "to-ico": "^1.1.5"
+  },
+  "dependencies": {
+    "discord-rpc": "^4.0.1",
+    "electron-log": "^4.4.8",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^5.3.0",
+    "yauzl": "^3.2.0"
+  },
+  "build": {
+    "appId": "com.horizonte.launcher",
+    "productName": "Horizonte Launcher",
+    "executableName": "Horizonte Launcher",
+    "directories": {
+      "output": "dist"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "horizonte-rp",
+      "repo": "horizonte-launcher-windows"
+    },
+    "afterPack": "./scripts/afterPack.js",
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "artifactName": "Horizonte-Launcher.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "runAfterFinish": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Horizonte Launcher"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "src/assets",
+        "to": "assets"
+      },
+      {
+        "from": "resources/drivers",
+        "to": "drivers"
+      }
+    ]
+  }
+}

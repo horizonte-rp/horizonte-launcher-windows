@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizonte Launcher</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mods.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Background -->
+    <div class="background">
+        <img id="bgImage" src="assets/images/banner_principal.jpg" alt="Background">
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <img src="assets/images/logo.png" alt="Logo" class="logo">
+            <div class="header-tabs-container">
+                <nav class="server-tabs">
+                    <button class="server-tab active" data-server="0">
+                        Horizonte RP
+                        <span class="server-status-tag online"></span>
+                    </button>
+                    <button class="server-tab" data-server="1">
+                        Horizonte DM
+                        <span class="server-status-tag offline"></span>
+                    </button>
+                    <button class="server-tab" data-server="2">
+                        Horizonte DayZ
+                        <span class="server-status-tag offline"></span>
+                    </button>
+                </nav>
+                <div class="nickname-input">
+                    <i class="bi bi-person-fill nickname-icon"></i>
+                    <input type="text" id="nickname" placeholder="Digite seu nick" maxlength="24">
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="btn-icon" id="btnSettings">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+            </button>
+            <button class="btn-icon" id="btnMinimize">
+                <span>—</span>
+            </button>
+            <button class="btn-icon btn-close" id="btnClose">
+                <span>×</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Download Notifications -->
+    <div class="download-notifications" id="downloadNotifications"></div>
+
+    <!-- Sub Navigation (below header) -->
+    <nav class="sub-nav" id="subNav">
+        <button class="sub-nav-back" id="btnSubNavBack" style="display: none;">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <button class="sub-nav-btn" id="btnStore">
+            LOJA
+        </button>
+        <button class="sub-nav-btn" id="btnMods">
+            MODS
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Left Side -->
+        <div class="left-panel">
+            <!-- Server Name -->
+            <h1 class="server-name" id="serverName">HORIZONTE</h1>
+
+            <!-- Social Buttons -->
+            <div class="social-buttons">
+                <button class="btn-social btn-site" id="btnSite">
+                    <i class="bi bi-globe2"></i> Site
+                </button>
+                <button class="btn-social-icon btn-youtube">
+                    <i class="bi bi-youtube"></i>
+                </button>
+                <button class="btn-social-icon btn-instagram">
+                    <i class="bi bi-instagram"></i>
+                </button>
+                <button class="btn-social-icon btn-tiktok">
+                    <i class="bi bi-tiktok"></i>
+                </button>
+                <button class="btn-social-icon btn-whatsapp">
+                    <i class="bi bi-whatsapp"></i>
+                </button>
+                <button class="btn-social-icon btn-discord" id="btnDiscord">
+                    <i class="bi bi-discord"></i>
+                </button>
+            </div>
+
+            <!-- News Section -->
+            <div class="news-section">
+                <h3 class="news-title">ATUALIZAÇÕES</h3>
+                <div class="news-cards" id="newsCards">
+                    <!-- Carregado dinamicamente -->
+                </div>
+                <div class="news-dots" id="newsDots">
+                    <!-- Carregado dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mods Page -->
+    <div class="mods-page" id="modsPage" style="display: none;">
+        <div class="mods-header">
+            <h3 class="mods-section-title" style="margin-bottom: 0;">
+                <i class="bi bi-star-fill"></i> Popular entre os jogadores
+            </h3>
+            <div class="mods-search">
+                <i class="bi bi-search"></i>
+                <input type="text" id="modsSearch" placeholder="Buscar mods...">
+            </div>
+        </div>
+
+        <div class="mods-content">
+            <!-- Popular Section -->
+            <section class="mods-section">
+                <div class="mods-grid" id="modsPopular">
+                    <!-- Carregado dinamicamente -->
+                </div>
+            </section>
+
+            <!-- All Mods Section -->
+            <section class="mods-section">
+                <div class="mods-section-header">
+                    <h3 class="mods-section-title white">
+                        <i class="bi bi-grid-fill"></i> Todos os mods
+                    </h3>
+                    <div class="mods-filter">
+                        <select id="modsCategoryFilter" class="mods-filter-select">
+                            <option value="all">Todas as categorias</option>
+                            <option value="cars">Carros</option>
+                            <option value="motorcycles">Motos</option>
+                            <option value="trucks">Caminhões</option>
+                            <option value="weapons">Armas</option>
+                            <option value="graphics">Gráficos</option>
+                            <option value="skins">Skins</option>
+                            <option value="sounds">Sons</option>
+                            <option value="maps">Mapas</option>
+                            <option value="hud">HUD</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mods-grid" id="modsAll">
+                    <!-- Carregado dinamicamente -->
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Mod Details Modal -->
+    <div class="mod-modal-overlay" id="modModalOverlay" style="display: none;">
+        <div class="mod-modal">
+            <button class="mod-modal-close" id="modModalClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="mod-modal-content">
+                <div class="mod-modal-image">
+                    <img id="modModalImage" src="" alt="Mod">
+                </div>
+                <div class="mod-modal-info">
+                    <h2 id="modModalTitle"></h2>
+                    <p class="mod-modal-author">Autor: <span id="modModalAuthor"></span></p>
+                    <p class="mod-modal-desc" id="modModalDesc"></p>
+                    <div class="mod-modal-requirements" id="modModalRequirements">
+                        <!-- Requisitos carregados dinamicamente -->
+                    </div>
+                    <div class="mod-modal-actions" id="modModalActions">
+                        <button class="mod-btn-install" id="modModalInstall">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/></svg> Instalar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-left">
+            <div class="progress-section">
+                <span class="progress-percent" id="progressPercent">100%</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" id="progressFill" style="width: 100%"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">Pronto para jogar</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-right">
+            <div class="server-selector" id="serverSelector">
+                <div class="server-icon-wrapper">
+                    <img src="assets/images/logo.png" alt="Server" class="server-icon-img">
+                    <span class="server-status-dot" id="serverStatusDot"></span>
+                </div>
+                <div class="server-info">
+                    <span class="server-info-name" id="footerServerName">Horizonte RP #1</span>
+                    <span class="server-info-players" id="footerPlayers">
+                        <span class="players-count">0</span>
+                        <span class="players-max">/1000</span>
+                    </span>
+                </div>
+                <button class="btn-server-menu" id="btnServerMenu">≡</button>
+            </div>
+            <button class="btn-play" id="btnPlay">
+                JOGAR
+                <i class="bi bi-play-fill play-icon"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Settings Sidebar -->
+    <div class="settings-overlay" id="settingsOverlay"></div>
+    <aside class="settings-sidebar" id="settingsSidebar">
+        <div class="settings-header">
+            <h2><i class="bi bi-gear-fill"></i> Configurações</h2>
+            <button class="btn-close-settings" id="btnCloseSettings">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="settings-content">
+            <!-- Seção: Informações -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Informações</h3>
+
+                <div class="settings-info-row">
+                    <span class="settings-info-label">Versão do Launcher</span>
+                    <span class="settings-info-value" id="settingsLauncherVersion">1.0.0</span>
+                </div>
+
+                <div class="settings-info-row">
+                    <span class="settings-info-label">Versão do Jogo</span>
+                    <span class="settings-info-value" id="settingsGameVersion">-</span>
+                </div>
+
+                <div class="settings-info-row">
+                    <span class="settings-info-label">Categoria Atual</span>
+                    <span class="settings-info-value" id="settingsCurrentCategory">RP</span>
+                </div>
+            </div>
+
+            <!-- Seção: Jogo -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Jogo</h3>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <span class="settings-item-title">Pasta de Instalação</span>
+                        <span class="settings-item-desc settings-path-clickable" id="settingsGamePath" title="Clique para abrir a pasta">Não instalado</span>
+                    </div>
+                    <button class="settings-btn" id="btnChangeGameFolder" title="Alterar pasta">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+
+                <div class="settings-item danger">
+                    <div class="settings-item-info">
+                        <span class="settings-item-title">Reinstalar Jogo</span>
+                        <span class="settings-item-desc">Remove e baixa novamente</span>
+                    </div>
+                    <button class="settings-btn danger" id="btnReinstallGame">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Seção: Preferências -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Preferências</h3>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <span class="settings-item-title">Discord Rich Presence</span>
+                        <span class="settings-item-desc">Mostrar status no Discord</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggleDiscordRPC" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <span class="settings-item-title">Iniciar com Windows</span>
+                        <span class="settings-item-desc">Abrir automaticamente ao ligar</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggleAutoLaunch" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Seção: Avançado -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Avançado</h3>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <span class="settings-item-title">Instalar Drivers</span>
+                        <span class="settings-item-desc" id="driversStatus">DirectX e Visual C++</span>
+                    </div>
+                    <button class="settings-btn" id="btnInstallDrivers">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/></svg>
+                    </button>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <span class="settings-item-title">Limpar Cache</span>
+                        <span class="settings-item-desc">Remove arquivos temporários</span>
+                    </div>
+                    <button class="settings-btn" id="btnClearCache">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-footer">
+            <span class="settings-footer-text">Horizonte Launcher</span>
+            <span class="settings-footer-version" id="settingsFooterVersion">v1.0.0</span>
+        </div>
+    </aside>
+
+    <!-- Server Menu -->
+    <div class="server-menu" id="serverMenu">
+        <div class="server-menu-item" data-server="0">
+            <div class="server-menu-icon-wrapper">
+                <img src="assets/images/logo.png" alt="Server" class="server-menu-icon-img">
+                <span class="server-menu-status-dot online" data-server-status="0"></span>
+            </div>
+            <div class="server-menu-info">
+                <span class="server-menu-name">Horizonte RP #1</span>
+                <span class="server-menu-players" data-server-players="0">0/1000</span>
+            </div>
+        </div>
+        <div class="server-menu-item" data-server="1">
+            <div class="server-menu-icon-wrapper">
+                <img src="assets/images/logo.png" alt="Server" class="server-menu-icon-img">
+                <span class="server-menu-status-dot" data-server-status="1"></span>
+            </div>
+            <div class="server-menu-info">
+                <span class="server-menu-name">Horizonte RP #2</span>
+                <span class="server-menu-players" data-server-players="1">0/1000</span>
+            </div>
+        </div>
+        <div class="server-menu-item" data-server="2">
+            <div class="server-menu-icon-wrapper">
+                <img src="assets/images/logo.png" alt="Server" class="server-menu-icon-img">
+                <span class="server-menu-status-dot" data-server-status="2"></span>
+            </div>
+            <div class="server-menu-info">
+                <span class="server-menu-name">Horizonte RP #3</span>
+                <span class="server-menu-players" data-server-players="2">0/1000</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/renderer.js"></script>
+</body>
+</html>

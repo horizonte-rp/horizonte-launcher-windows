@@ -1,0 +1,714 @@
+/* ==========================================
+   Sub Navigation (below header)
+   ========================================== */
+.sub-nav {
+    position: fixed;
+    top: 110px;
+    left: 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 99;
+}
+
+.sub-nav-btn {
+    background: transparent;
+    border: none;
+    color: #8a8a8a;
+    font-family: 'Roboto', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 10px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    animation: fadeInScale 0.4s ease forwards;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sub-nav-btn:hover {
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.sub-nav-back {
+    background: transparent;
+    border: none;
+    color: #8a8a8a;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px 8px;
+    margin-right: 5px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: slideInFromLeft 0.3s ease forwards;
+}
+
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sub-nav-back:hover {
+    color: var(--text-primary);
+    transform: translateX(-3px);
+}
+
+/* ==========================================
+   Mods Navigation (inside mods page)
+   ========================================== */
+.mods-nav {
+    position: fixed;
+    top: 110px;
+    left: 0;
+    z-index: 99;
+}
+
+.mods-nav-back {
+    background: transparent;
+    border: none;
+    color: #8a8a8a;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 10px 15px;
+    margin-left: 15px;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mods-nav-back:hover {
+    color: var(--text-primary);
+}
+
+.mods-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+}
+
+.mods-nav-btn:hover {
+    color: var(--text-primary);
+}
+
+.mods-nav-btn.active {
+    color: var(--text-primary);
+}
+
+/* ==========================================
+   Mods Page
+   ========================================== */
+.mods-page {
+    position: fixed;
+    top: 160px;
+    left: 0;
+    right: 0;
+    bottom: 30px;
+    background: transparent;
+    z-index: 50;
+    overflow-y: auto;
+    padding: 40px 30px 40px 30px;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mods-page::-webkit-scrollbar {
+    width: 8px;
+}
+
+.mods-page::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.mods-page::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.mods-page::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.mods-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.mods-search {
+    display: flex;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 10px 15px;
+    gap: 10px;
+    width: 220px;
+    transition: all 0.3s ease;
+}
+
+.mods-search:focus-within {
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+.mods-search i {
+    color: var(--text-secondary);
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.mods-search:focus-within i {
+    color: var(--text-primary);
+}
+
+.mods-search input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+}
+
+.mods-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.mods-content {
+    padding-bottom: 20px;
+}
+
+.mods-content::after {
+    content: '';
+    display: block;
+    height: 100px;
+    width: 100%;
+}
+
+.mods-section {
+    margin-bottom: 50px;
+}
+
+.mods-section:last-child {
+    margin-bottom: 0;
+}
+
+.mods-section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #f5a623;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mods-section-title.white {
+    color: #ffffff;
+}
+
+.mods-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.mods-section-header .mods-section-title {
+    margin-bottom: 0;
+}
+
+.mods-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mods-filter-select {
+    background: linear-gradient(135deg, rgba(30, 30, 35, 0.95) 0%, rgba(25, 25, 30, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 10px 40px 10px 16px;
+    color: var(--text-primary);
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23888888' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    min-width: 190px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mods-filter-select:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mods-filter-select:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mods-filter-select option {
+    background: #1a1a1f;
+    color: var(--text-primary);
+    padding: 12px 16px;
+    font-weight: 400;
+}
+
+.mods-filter-select option:hover,
+.mods-filter-select option:focus {
+    background: #252530;
+}
+
+.mods-section-title i {
+    font-size: 12px;
+}
+
+.mods-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+/* Mod Card */
+.mod-card {
+    background: var(--bg-card);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    gap: 15px;
+    transition: var(--transition);
+    animation: fadeInUp 0.5s ease forwards;
+    opacity: 0;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Staggered animation for cards */
+.mod-card:nth-child(1) { animation-delay: 0.1s; }
+.mod-card:nth-child(2) { animation-delay: 0.2s; }
+.mod-card:nth-child(3) { animation-delay: 0.3s; }
+.mod-card:nth-child(4) { animation-delay: 0.4s; }
+
+.mod-card:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+}
+
+.mod-card.installed {
+    border-color: rgba(76, 175, 80, 0.4);
+}
+
+.mod-card.white-border {
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+}
+
+.mod-card.white-border:hover {
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Mods Populares - Destaque sutil */
+.mod-card.popular {
+    background: rgba(245, 166, 35, 0.04);
+    border: 1.5px solid rgba(245, 166, 35, 0.6);
+}
+
+.mod-card.popular:hover {
+    background: rgba(245, 166, 35, 0.08);
+    border-color: rgba(245, 166, 35, 0.8);
+}
+
+.mod-card-image {
+    width: 270px;
+    height: 130px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+}
+
+.mod-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mod-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.mod-card-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.mod-card-author {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.mod-card-author span {
+    color: var(--text-primary);
+}
+
+.mod-card-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    flex: 1;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.mod-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.mod-card-details {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: var(--transition);
+    padding: 0;
+}
+
+.mod-card-details:hover {
+    color: var(--text-primary);
+}
+
+.mod-btn-install {
+    background: linear-gradient(135deg, var(--accent-green) 0%, #45a049 100%);
+    border: none;
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition);
+}
+
+.mod-btn-install:hover {
+    background: linear-gradient(135deg, var(--accent-green-hover) 0%, #4caf50 100%);
+    transform: scale(1.02);
+}
+
+.mod-btn-install.installing {
+    background: var(--bg-tertiary);
+    cursor: not-allowed;
+}
+
+.mod-btn-install:disabled {
+    background: var(--bg-tertiary);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    color: #ffc107;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.mod-btn-install:disabled:hover {
+    transform: none;
+    background: var(--bg-tertiary);
+}
+
+.mod-btn-install.installed {
+    background: transparent;
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+}
+
+/* Mod Actions for Installed Mods */
+.mod-actions-installed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mod-btn-reinstall {
+    background: transparent;
+    border: 1px solid #f5a623;
+    color: #f5a623;
+    font-family: 'Roboto', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition);
+}
+
+.mod-btn-reinstall:hover {
+    background: rgba(245, 166, 35, 0.1);
+    border-color: #ff9800;
+    color: #ff9800;
+    transform: scale(1.02);
+}
+
+.mod-btn-uninstall {
+    background: transparent;
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    font-family: 'Roboto', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.mod-btn-uninstall:hover {
+    background: rgba(244, 67, 54, 0.1);
+    border-color: #ff5555;
+    color: #ff5555;
+    transform: scale(1.02);
+}
+
+.mod-requirement-warning {
+    font-size: 11px;
+    color: #f5a623;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Mod Modal */
+.mod-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mod-modal {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mod-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: var(--text-primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: var(--transition);
+}
+
+.mod-modal-close:hover {
+    background: rgba(244, 67, 54, 0.8);
+}
+
+.mod-modal-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.mod-modal-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.mod-modal-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mod-modal-info {
+    padding: 25px;
+}
+
+.mod-modal-info h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.mod-modal-author {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+}
+
+.mod-modal-author span {
+    color: var(--text-primary);
+}
+
+.mod-modal-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.mod-modal-requirements {
+    background: rgba(245, 166, 35, 0.1);
+    border: 1px solid rgba(245, 166, 35, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.mod-modal-requirements h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f5a623;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mod-modal-requirements ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mod-modal-requirements li {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.mod-modal-requirements li.installed {
+    color: var(--accent-green);
+}
+
+.mod-modal-requirements li.missing {
+    color: var(--accent-red);
+}
+
+.mod-modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.mod-modal-actions .mod-btn-install {
+    padding: 12px 24px;
+    font-size: 14px;
+}
+
+/* Hide main content when mods page is shown */
+.main-content.hidden {
+    display: none;
+}
