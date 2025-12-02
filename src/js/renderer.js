@@ -709,11 +709,13 @@ function showUpdateChoiceModal(update) {
     `;
     document.body.appendChild(modal);
 
-    // Event listener para "Atualizar" - inicia download silencioso e instalação automática
+    // Event listener para "Atualizar" - inicia download e instalação automática
     document.getElementById('btnUpdateNow').addEventListener('click', function() {
         modal.remove();
         userWantsAutoInstall = true; // Instalar automaticamente após download
-        // Iniciar download silenciosamente (sem modal)
+        // Mostrar modal de atualização
+        showUpdateModal(update, 'downloading');
+        // Iniciar download
         ipcRenderer.send('start-update-download');
     });
 
