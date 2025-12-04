@@ -1,7 +1,7 @@
 <?php
 /**
  * Configuração do Banco de Dados
- * Horizonte Launcher - Auth API
+ * Horizonte Launcher - API
  */
 
 define('DB_HOST', '127.0.0.1');
@@ -102,4 +102,3 @@ function logActivity($type, $hwid, $data = []) {
         error_log("Erro ao registrar log: " . $e->getMessage());
     }
 }
-?>

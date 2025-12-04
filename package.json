@@ -1,6 +1,6 @@
 {
   "name": "horizonte-launcher",
-  "version": "1.1.1",
+  "version": "1.1.4",
   "description": "Launcher para servidores SA-MP Horizonte",
   "main": "src/main.js",
   "scripts": {
@@ -48,7 +48,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowElevation": true,
-      "runAfterFinish": false,
+      "runAfterFinish": true,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",

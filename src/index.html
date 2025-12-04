@@ -84,6 +84,11 @@
             <!-- Server Name -->
             <h1 class="server-name" id="serverName">HORIZONTE</h1>
 
+            <!-- Players Online Counter -->
+            <div class="players-online" id="playersOnline">
+                <span class="players-count">0</span> <span class="players-text">jogadores online</span>
+            </div>
+
             <!-- Social Buttons -->
             <div class="social-buttons">
                 <button class="btn-social btn-site" id="btnSite">
@@ -268,7 +273,9 @@
                 <div class="settings-item">
                     <div class="settings-item-info">
                         <span class="settings-item-title">Pasta de Instalação</span>
-                        <span class="settings-item-desc settings-path-clickable" id="settingsGamePath" title="Clique para abrir a pasta">Não instalado</span>
+                        <span class="settings-item-desc settings-path-clickable" id="settingsGamePath" title="Clique para abrir a pasta">
+                            <span style="font-size: 14px;">📁</span><span class="path-text">Não instalado</span>
+                        </span>
                     </div>
                     <button class="settings-btn" id="btnChangeGameFolder" title="Alterar pasta">
                         <i class="bi bi-pencil"></i>

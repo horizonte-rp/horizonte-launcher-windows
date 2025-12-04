@@ -138,7 +138,6 @@ class SampQuery {
         // Todas as tentativas falharam - usar cache se disponível e recente (< 60s)
         const cached = serverCache.get(this.cacheKey);
         if (cached && (Date.now() - cached.timestamp) < 60000) {
-            console.log(`Usando cache para ${this.cacheKey}`);
             return cached.data;
         }
 

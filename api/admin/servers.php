@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO launcher_servers (category, server_id, name, ip, port, max_players, discord, order, active)
+                INSERT INTO launcher_servers (category, server_id, name, ip, port, max_players, discord, `order`, active)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("
                 UPDATE launcher_servers
-                SET category = ?, server_id = ?, name = ?, ip = ?, port = ?, max_players = ?, discord = ?, order = ?, active = ?
+                SET category = ?, server_id = ?, name = ?, ip = ?, port = ?, max_players = ?, discord = ?, `order` = ?, active = ?
                 WHERE id = ?
             ");
             $stmt->execute([
@@ -86,10 +86,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Buscar todos os servidores
-$servers = $pdo->query("
-    SELECT * FROM launcher_servers
-    ORDER BY category, order, name
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $servers = $pdo->query("
+        SELECT * FROM launcher_servers
+        ORDER BY category, `order`, name
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    die('Erro ao buscar servidores: ' . $e->getMessage() . '<br><br>Provavelmente a tabela não existe. Execute o arquivo database/content_tables.sql no MySQL.');
+}
 
 // Contar servidores por categoria
 $categories = ['rp' => 0, 'dm' => 0, 'dayz' => 0];
@@ -436,10 +440,10 @@ foreach ($servers as $server) {
                 <li><a href="notifications.php">📢 Notificações</a></li>
                 <li><a href="sessions.php">👥 Sessões Ativas</a></li>
                 <li><a href="devices.php">💻 Dispositivos</a></li>
+                <li><a href="bans.php">🚫 Banimentos</a></li>
                 <li><a href="servers.php" class="active">🎮 Servidores</a></li>
                 <li><a href="mods.php">📦 Mods</a></li>
                 <li><a href="news.php">📰 Notícias</a></li>
-                <li><a href="index.php?logout=1">🚪 Sair</a></li>
             </ul>
         </nav>
 

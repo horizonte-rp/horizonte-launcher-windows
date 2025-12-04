@@ -397,10 +397,10 @@ $notifications = $pdo->query("
                 <li><a href="notifications.php" class="active">📢 Notificações</a></li>
                 <li><a href="sessions.php">👥 Sessões Ativas</a></li>
                 <li><a href="devices.php">💻 Dispositivos</a></li>
+                <li><a href="bans.php">🚫 Banimentos</a></li>
                 <li><a href="servers.php">🎮 Servidores</a></li>
                 <li><a href="mods.php">📦 Mods</a></li>
                 <li><a href="news.php">📰 Notícias</a></li>
-                <li><a href="logout.php">🚪 Sair</a></li>
             </ul>
         </nav>
 

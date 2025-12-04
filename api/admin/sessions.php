@@ -244,6 +244,61 @@ $vmSessions = count(array_filter($sessions, fn($s) => $s['is_vm']));
             color: #666;
         }
 
+        .hwid-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 100%;
+        }
+
+        .hwid-input {
+            font-family: monospace;
+            font-size: 11px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            color: #333;
+            width: 180px;
+            cursor: text;
+        }
+
+        .hwid-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0.5;
+            display: flex;
+            align-items: center;
+        }
+
+        .copy-btn:hover {
+            opacity: 1;
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: #666;
+            transition: fill 0.2s;
+        }
+
+        .copy-btn:hover svg {
+            fill: #333;
+        }
+
+        .copy-btn.copied svg {
+            fill: #4CAF50;
+        }
+
         .vm-indicator {
             display: inline-flex;
             align-items: center;
@@ -264,10 +319,10 @@ $vmSessions = count(array_filter($sessions, fn($s) => $s['is_vm']));
                 <li><a href="notifications.php">📢 Notificações</a></li>
                 <li><a href="sessions.php" class="active">👥 Sessões Ativas</a></li>
                 <li><a href="devices.php">💻 Dispositivos</a></li>
+                <li><a href="bans.php">🚫 Banimentos</a></li>
                 <li><a href="servers.php">🎮 Servidores</a></li>
                 <li><a href="mods.php">📦 Mods</a></li>
                 <li><a href="news.php">📰 Notícias</a></li>
-                <li><a href="logout.php">🚪 Sair</a></li>
             </ul>
         </nav>
 
@@ -320,9 +375,14 @@ $vmSessions = count(array_filter($sessions, fn($s) => $s['is_vm']));
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="hwid-short" title="<?= htmlspecialchars($session['hwid']) ?>">
-                                        <?= substr($session['hwid'], 0, 16) ?>...
-                                    </span>
+                                    <div class="hwid-container">
+                                        <input type="text" class="hwid-input" value="<?= htmlspecialchars($session['hwid']) ?>" readonly>
+                                        <button class="copy-btn" onclick="copyHWID(this)" title="Copiar HWID">
+                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
                                 <td><?= htmlspecialchars($session['manufacturer'] ?? 'N/A') ?></td>
                                 <td><strong>v<?= htmlspecialchars($session['launcher_version']) ?></strong></td>
@@ -371,6 +431,48 @@ $vmSessions = count(array_filter($sessions, fn($s) => $s['is_vm']));
     <script>
         // Auto-refresh a cada 30 segundos
         setTimeout(() => location.reload(), 30000);
+
+        // Função para copiar HWID
+        function copyHWID(button) {
+            const input = button.previousElementSibling;
+            const hwid = input.value;
+
+            // Selecionar o texto
+            input.select();
+            input.setSelectionRange(0, 99999); // Para mobile
+
+            // Tentar copiar
+            let success = false;
+            try {
+                // Método antigo (mais compatível)
+                success = document.execCommand('copy');
+            } catch (err) {
+                success = false;
+            }
+
+            if (success) {
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    input.blur();
+                }, 1500);
+            } else {
+                // Fallback: tentar Clipboard API
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(hwid).then(() => {
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.classList.remove('copied');
+                            input.blur();
+                        }, 1500);
+                    }).catch(err => {
+                        alert('Erro ao copiar: ' + err);
+                    });
+                } else {
+                    alert('Seu navegador não suporta cópia automática');
+                }
+            }
+        }
     </script>
 </body>
 </html>

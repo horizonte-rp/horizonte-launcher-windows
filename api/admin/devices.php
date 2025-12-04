@@ -231,6 +231,61 @@ $activeDevices = count(array_filter($devices, fn($d) => $d['last_seen'] && strto
             cursor: help;
         }
 
+        .hwid-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 100%;
+        }
+
+        .hwid-input {
+            font-family: monospace;
+            font-size: 11px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            color: #333;
+            width: 180px;
+            cursor: text;
+        }
+
+        .hwid-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0.5;
+            display: flex;
+            align-items: center;
+        }
+
+        .copy-btn:hover {
+            opacity: 1;
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: #666;
+            transition: fill 0.2s;
+        }
+
+        .copy-btn:hover svg {
+            fill: #333;
+        }
+
+        .copy-btn.copied svg {
+            fill: #4CAF50;
+        }
+
         .refresh-btn {
             position: fixed;
             bottom: 30px;
@@ -266,10 +321,10 @@ $activeDevices = count(array_filter($devices, fn($d) => $d['last_seen'] && strto
                 <li><a href="notifications.php">📢 Notificações</a></li>
                 <li><a href="sessions.php">👥 Sessões Ativas</a></li>
                 <li><a href="devices.php" class="active">💻 Dispositivos</a></li>
+                <li><a href="bans.php">🚫 Banimentos</a></li>
                 <li><a href="servers.php">🎮 Servidores</a></li>
                 <li><a href="mods.php">📦 Mods</a></li>
                 <li><a href="news.php">📰 Notícias</a></li>
-                <li><a href="index.php?logout=1">🚪 Sair</a></li>
             </ul>
         </nav>
 
@@ -293,6 +348,19 @@ $activeDevices = count(array_filter($devices, fn($d) => $d['last_seen'] && strto
         <div class="content-card">
             <h2>Todos os Dispositivos Registrados</h2>
 
+            <div style="margin-bottom: 20px;">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="🔍 Buscar por usuário, HWID, fabricante, IP..."
+                    style="width: 100%; padding: 12px 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s ease;"
+                    onkeyup="filterDevices()"
+                    onfocus="this.style.borderColor='#667eea'"
+                    onblur="this.style.borderColor='#ddd'"
+                >
+                <p id="searchResults" style="margin-top: 10px; color: #666; font-size: 13px;"></p>
+            </div>
+
             <?php if (empty($devices)): ?>
                 <p style="text-align: center; color: #999; padding: 40px;">
                     Nenhum dispositivo registrado ainda
@@ -315,9 +383,14 @@ $activeDevices = count(array_filter($devices, fn($d) => $d['last_seen'] && strto
                             <tr>
                                 <td><strong><?= htmlspecialchars($device['username']) ?></strong></td>
                                 <td>
-                                    <span class="hwid-short" title="<?= htmlspecialchars($device['hwid']) ?>">
-                                        <?= substr($device['hwid'], 0, 16) ?>...
-                                    </span>
+                                    <div class="hwid-container">
+                                        <input type="text" class="hwid-input" value="<?= htmlspecialchars($device['hwid']) ?>" readonly>
+                                        <button class="copy-btn" onclick="copyHWID(this)" title="Copiar HWID">
+                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
                                 <td><?= htmlspecialchars($device['manufacturer'] ?? 'N/A') ?></td>
                                 <td>
@@ -353,6 +426,92 @@ $activeDevices = count(array_filter($devices, fn($d) => $d['last_seen'] && strto
     <button class="refresh-btn" onclick="location.reload()" title="Atualizar">↻</button>
 
     <script>
+        // Função de busca/filtro
+        function filterDevices() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const table = document.querySelector('table tbody');
+            const rows = table.getElementsByTagName('tr');
+            let visibleCount = 0;
+
+            for (let row of rows) {
+                const username = row.cells[0].textContent.toLowerCase();
+                // Pegar HWID completo do input
+                const hwidInput = row.cells[1].querySelector('.hwid-input');
+                const hwid = hwidInput ? hwidInput.value.toLowerCase() : '';
+                const manufacturer = row.cells[2].textContent.toLowerCase();
+                const vm = row.cells[3].textContent.toLowerCase();
+                const ip = row.cells[4].textContent.toLowerCase();
+                const registeredAt = row.cells[5].textContent.toLowerCase();
+                const lastSeen = row.cells[6].textContent.toLowerCase();
+
+                // Busca em todos os campos
+                const found = username.includes(searchTerm) ||
+                             hwid.includes(searchTerm) ||
+                             manufacturer.includes(searchTerm) ||
+                             vm.includes(searchTerm) ||
+                             ip.includes(searchTerm) ||
+                             registeredAt.includes(searchTerm) ||
+                             lastSeen.includes(searchTerm);
+
+                if (found) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+
+            // Atualizar contador de resultados
+            const resultsText = document.getElementById('searchResults');
+            if (searchTerm) {
+                resultsText.textContent = `Mostrando ${visibleCount} de <?= count($devices) ?> dispositivos`;
+            } else {
+                resultsText.textContent = '';
+            }
+        }
+
+        // Função para copiar HWID
+        function copyHWID(button) {
+            const input = button.previousElementSibling;
+            const hwid = input.value;
+
+            // Selecionar o texto
+            input.select();
+            input.setSelectionRange(0, 99999); // Para mobile
+
+            // Tentar copiar
+            let success = false;
+            try {
+                // Método antigo (mais compatível)
+                success = document.execCommand('copy');
+            } catch (err) {
+                success = false;
+            }
+
+            if (success) {
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    input.blur();
+                }, 1500);
+            } else {
+                // Fallback: tentar Clipboard API
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(hwid).then(() => {
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.classList.remove('copied');
+                            input.blur();
+                        }, 1500);
+                    }).catch(err => {
+                        alert('Erro ao copiar: ' + err);
+                    });
+                } else {
+                    alert('Seu navegador não suporta cópia automática');
+                }
+            }
+        }
+
         // Auto-refresh a cada 60 segundos
         setTimeout(() => location.reload(), 60000);
     </script>

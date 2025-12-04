@@ -79,8 +79,6 @@ class AuthService {
             const isHttps = url.protocol === 'https:';
             const client = isHttps ? https : http;
 
-            console.log('[AuthService] Requisição para:', fullUrl);
-
             const payload = JSON.stringify(data);
 
             const options = {
@@ -102,7 +100,6 @@ class AuthService {
 
                 res.on('data', chunk => body += chunk);
                 res.on('end', () => {
-                    console.log('[AuthService] Status:', res.statusCode, '| Resposta:', body.slice(0, 200));
                     try {
                         const response = JSON.parse(body);
                         resolve(response);
@@ -143,8 +140,6 @@ class AuthService {
             return this.deviceData;
         }
 
-        console.log('[AuthService] Coletando dados do dispositivo...');
-
         const hwid = hwidService.getHWID();
         const vmCheck = vmDetector.detect();
 
@@ -176,8 +171,6 @@ class AuthService {
      * @returns {Promise<Object>} - Resultado do registro
      */
     async registerDevice(username, password = null) {
-        console.log('[AuthService] Registrando dispositivo...');
-
         const deviceData = this.collectDeviceData();
 
         const payload = {
@@ -190,9 +183,7 @@ class AuthService {
         try {
             const response = await this.request('/register-device.php', payload);
 
-            if (response.success) {
-                console.log('[AuthService] Dispositivo registrado com sucesso');
-            } else {
+            if (!response.success) {
                 console.error('[AuthService] Falha no registro:', response.error);
             }
 
@@ -212,8 +203,6 @@ class AuthService {
      * @returns {Promise<Object>} - Status do ban
      */
     async checkBan() {
-        console.log('[AuthService] Verificando banimento...');
-
         const deviceData = this.collectDeviceData();
 
         const payload = {
@@ -225,12 +214,6 @@ class AuthService {
 
         try {
             const response = await this.request('/check-ban.php', payload);
-
-            if (response.banned) {
-                console.log('[AuthService] HWID banido:', response.reason);
-            } else {
-                console.log('[AuthService] HWID não está banido');
-            }
 
             return response;
         } catch (error) {
@@ -250,13 +233,10 @@ class AuthService {
      * @returns {Promise<Object>} - Token de sessão
      */
     async requestSessionToken(username, serverId) {
-        console.log('[AuthService] Solicitando token de sessão...');
-
         const deviceData = this.collectDeviceData();
 
         // Verifica se é VM
         if (deviceData.isVM) {
-            console.warn('[AuthService] Máquina virtual detectada!');
             // Pode bloquear ou apenas avisar
             // return { success: false, error: 'Máquinas virtuais não são permitidas', code: 'VM_DETECTED' };
         }
@@ -274,8 +254,6 @@ class AuthService {
             if (response.success && response.token) {
                 this.sessionToken = response.token;
                 this.sessionExpiry = Date.now() + (response.expiresIn || 300) * 1000; // Default 5 min
-
-                console.log('[AuthService] Token obtido:', this.sessionToken.slice(0, 8) + '...');
             }
 
             return response;
@@ -331,8 +309,6 @@ class AuthService {
      * @returns {Promise<Object>} - Resultado da verificação
      */
     async verifyBeforePlay(username, serverId) {
-        console.log('[AuthService] Iniciando verificação pré-jogo...');
-
         // 1. Coleta dados do dispositivo
         const deviceData = this.collectDeviceData();
 

@@ -12,13 +12,13 @@ header('Access-Control-Allow-Origin: *');
 // Configuração do Launcher
 $config = [
     // Versão atual do launcher (altere quando lançar nova versão)
-    'version' => '1.1.1',
+    'version' => '1.1.4',
 
     // URL para download da nova versão (quando disponível)
     'updateUrl' => 'http://horizontegames.com/api/downloads/Horizonte%20Launcher.exe',
 
     // Forçar atualização? Se true, usuário não pode usar versão antiga
-    'forceUpdate' => false,
+    'forceUpdate' => true,
 
     // Mensagem de manutenção (deixe vazio para desativar)
     'maintenance' => '',
@@ -28,6 +28,9 @@ $config = [
 
     // URL da API de autenticação (HWID, tokens, bans)
     'authApiUrl' => 'http://horizontegames.com/api/auth',
+
+    // URL da API para notificações e heartbeat
+    'apiUrl' => 'http://horizontegames.com/api',
 
     // Categorias de servidores
     'categories' => [
@@ -87,7 +90,7 @@ $config = [
             'news' => [
                 [
                     'id' => 1,
-                    'title' => 'Natal chegando',
+                    'title' => 'Natal chegando!',
                     'image' => 'http://horizontegames.com/api/assets/images/news1.png?v=4',
                     'link' => 'https://horizonte-rp.com'
                 ],
@@ -99,7 +102,7 @@ $config = [
                 ],
                 [
                     'id' => 3,
-                    'title' => 'Natal chegando',
+                    'title' => 'Natal chegando!',
                     'image' => 'http://horizontegames.com/api/assets/images/news1.png?v=4',
                     'link' => 'https://horizonte-rp.com'
                 ]
@@ -110,7 +113,7 @@ $config = [
             'titleName' => 'HZ:DM',
             'folderName' => 'horizonte-dm',
             'color' => '#ff6b35',  // Cor principal da categoria (usada em botões, barras, etc)
-            'banner' => 'http://horizontegames.com/api/assets/images/banner_dm.jpg?v=4',
+            'banner' => 'http://horizontegames.com/api/assets/images/banner_rp.jpg?v=4',
             'download' => [
                 'url' => '',  // Vazio = download não disponível
                 'version' => '',
@@ -124,7 +127,7 @@ $config = [
             'titleName' => 'HZ:DAYZ',
             'folderName' => 'horizonte-dayz',
             'color' => '#4caf50',  // Cor principal da categoria (usada em botões, barras, etc)
-            'banner' => 'http://horizontegames.com/api/assets/images/banner_dayz.jpg?v=4',
+            'banner' => 'http://horizontegames.com/api/assets/images/banner_rp.jpg?v=4',
             'download' => [
                 'url' => 'https://horizonte-rp.com/assets/game.zip',
                 'version' => '1.0.0',
@@ -195,12 +198,12 @@ $config = [
             'author' => 'FYP',
             'description' => 'Carregador de scripts Lua para GTA San Andreas com suporte a SAMP.',
             'fullDescription' => 'MoonLoader permite executar scripts em Lua no GTA SA. Essencial para diversos mods e ferramentas de SAMP, com hot-reload e console de debug.',
-            'image' => 'http://horizontegames.com/api/assets/mods/moonloader.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/moonloader.png?v=4',
             'category' => 'tools',
             'gameCategory' => 'rp',
             'popular' => true,
             'dependencies' => [],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/moonloader.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/moonloader.zip',
             'version' => '0.26',
             'size' => 5242880
         ],
@@ -210,12 +213,12 @@ $config = [
             'author' => 'LINK/2012',
             'description' => 'Gerenciador de mods que permite instalar mods sem substituir arquivos.',
             'fullDescription' => 'Mod Loader facilita a instalação de mods criando uma pasta onde você pode colocar mods sem modificar os arquivos originais do jogo.',
-            'image' => 'http://horizontegames.com/api/assets/mods/modloader.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/modloader.png?v=4',
             'category' => 'tools',
             'gameCategory' => 'rp',
             'popular' => true,
             'dependencies' => [],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/modloader.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/modloader.zip',
             'version' => '0.3.7',
             'size' => 1048576
         ],
@@ -225,12 +228,12 @@ $config = [
             'author' => 'Seemann',              // Autor do mod
             'description' => 'Biblioteca essencial para rodar scripts CLEO no GTA San Andreas.',  // Descrição curta (aparece no card)
             'fullDescription' => 'CLEO 4 é a biblioteca mais importante para mods de GTA SA. Permite executar scripts .cs e .csi, adicionando novas funcionalidades ao jogo.',  // Descrição completa (aparece no modal)
-            'image' => 'http://horizontegames.com/api/assets/mods/cleo.png?v=4',  // URL da imagem do mod
+            'image' => 'http://horizontegames.com/api/assets/images/cleo.png?v=4',  // URL da imagem do mod
             'category' => 'tools',              // Tipo do mod (ver lista acima)
             'gameCategory' => 'rp',             // Servidor onde aparece (rp/dm/dayz)
             'popular' => true,                  // Aparece em "Populares"? (true/false)
             'dependencies' => [],                // Dependências (array de IDs)
-            'downloadUrl' => 'http://horizontegames.com/api/mods/cleo.zip',  // URL do arquivo ZIP
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/cleo.zip',  // URL do arquivo ZIP
             'version' => '4.4.1',
             'size' => 2097152
         ],
@@ -240,12 +243,12 @@ $config = [
             'author' => 'Adrian G',
             'description' => 'Digite qualquer expressão matemática e veja o resultado em tempo real, sem precisar enviar a mensagem.',
             'fullDescription' => 'Script que permite realizar cálculos matemáticos diretamente no campo de chat do SA-MP. Ao digitar uma expressão matemática, o resultado é exibido automaticamente em uma janela flutuante, sem necessidade de enviar a mensagem. Exemplo: (1500/100)*30',
-            'image' => 'http://horizontegames.com/api/assets/mods/calculadora.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/calculadora.png?v=4',
             'category' => 'tools',
             'gameCategory' => 'rp',
             'popular' => true,
             'dependencies' => ['moonloader'],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/calculadora.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/calculadora.zip',
             'version' => '3.0',
             'size' => 3145728
         ],
@@ -255,12 +258,12 @@ $config = [
             'author' => 'BillyCoster',
             'description' => 'Adiciona rastros de fumaça realistas nas balas disparadas, similar ao efeito do GTA V.',
             'fullDescription' => 'Este mod adiciona um efeito visual de rastro de fumaça nas balas disparadas, tornando os tiroteios mais imersivos e cinematográficos. Inspirado no sistema de traçantes do GTA V, permite visualizar a trajetória dos projéteis em tempo real. Ideal para quem busca maior realismo nos combates.',
-            'image' => 'http://horizontegames.com/api/assets/mods/traçante.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/traçante.png?v=4',
             'category' => 'graphics',
             'gameCategory' => 'rp',
             'popular' => false,
             'dependencies' => [],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/traçante.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/traçante.zip',
             'version' => '1.0',
             'size' => 141312
         ],
@@ -270,12 +273,12 @@ $config = [
             'author' => 'Daryl',
             'description' => 'Mude o clima, o tempo e outras configurações do jogo.',
             'fullDescription' => 'Este mod te da a possibilidade de mudar o clima e o tempo do jogo. Também é possível ativar widescreen, damage informer, entre outros...',
-            'image' => 'http://horizontegames.com/api/assets/mods/climaMenu.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/climaMenu.png?v=4',
             'category' => 'graphics',
             'gameCategory' => 'rp',
             'popular' => false,
             'dependencies' => [],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/climaMenu.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/climaMenu.zip',
             'version' => '1.0',
             'size' => 141312
         ],
@@ -285,12 +288,12 @@ $config = [
             'author' => 'Victor Trok',
             'description' => 'Edite o HUD do capacete do servidor através do comando /capa.',
             'fullDescription' => 'Este mod edita o HUD de capacete no servidor através do comando /Capa.',
-            'image' => 'http://horizontegames.com/api/assets/mods/capaEditor.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/capaEditor.png?v=4',
             'category' => 'hud',
             'gameCategory' => 'rp',
             'popular' => false,
             'dependencies' => ['moonloader'],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/capaEditor.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/capaEditor.zip',
             'version' => '1.0',
             'size' => 141312
         ],
@@ -300,12 +303,12 @@ $config = [
             'author' => 'Victor Trok',
             'description' => 'Edite o HUD do jogo através do comando /hud.',
             'fullDescription' => 'Este mod edita o HUD do jogo, (barra de vida, colete, folego, stamina, dinheiro, icone da arma) através do comando /hud.',
-            'image' => 'http://horizontegames.com/api/assets/mods/hudEditor.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/hudEditor.png?v=4',
             'category' => 'hud',
             'gameCategory' => 'rp',
             'popular' => false,
             'dependencies' => ['moonloader'],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/hudEditor.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/hudEditor.zip',
             'version' => '1.0',
             'size' => 141312
         ],
@@ -315,12 +318,12 @@ $config = [
             'author' => 'Bill Master',
             'description' => 'Personalize o TAB do jogo. Pesquise jogadores, crie grupos e outras configurações.',
             'fullDescription' => 'Este mod modifica o TAB do jogo (scoreboard) e te da opções de pesquisar por jogadores, criar grupos, entre outras configurações.',
-            'image' => 'http://horizontegames.com/api/assets/mods/tab.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/tab.png?v=4',
             'category' => 'hud',
             'gameCategory' => 'rp',
             'popular' => false,
             'dependencies' => ['moonloader'],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/tab.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/tab.zip',
             'version' => '1.0',
             'size' => 141312
         ],
@@ -330,12 +333,12 @@ $config = [
             'author' => 'Bill Master',
             'description' => 'Modifique sua NRG-500 para uma Tiger 1200.',
             'fullDescription' => 'Este mod substitui o veiculo NRG-500 para a Triumph Tiger 1200.',
-            'image' => 'http://horizontegames.com/api/assets/mods/tiger1200.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/tiger1200.png?v=4',
             'category' => 'motorcycles',
             'gameCategory' => 'rp',
             'popular' => false,
             'dependencies' => ['modloader'],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/tiger1200.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/tiger1200.zip',
             'version' => '1.0',
             'size' => 141312
         ],
@@ -345,12 +348,12 @@ $config = [
             'author' => 'Ricky',
             'description' => 'Modifique seu Infernus para uma Lamborghini Revuelto.',
             'fullDescription' => 'Este mod substitui o veiculo Infernus para a Lamborghini Revuelto.',
-            'image' => 'http://horizontegames.com/api/assets/mods/lamborghiniRevuelto.png?v=4',
+            'image' => 'http://horizontegames.com/api/assets/images/lamborghiniRevuelto.png?v=4',
             'category' => 'cars',
             'gameCategory' => 'rp',
             'popular' => false,
             'dependencies' => ['modloader'],
-            'downloadUrl' => 'http://horizontegames.com/api/mods/lamborghiniRevuelto.zip',
+            'downloadUrl' => 'http://horizontegames.com/api/assets/mods/lamborghiniRevuelto.zip',
             'version' => '1.0',
             'size' => 141312
         ],

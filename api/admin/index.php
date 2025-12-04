@@ -10,10 +10,58 @@ session_start();
 $ADMIN_USERNAME = 'admin';
 $ADMIN_PASSWORD = '@horizonte@rp@'; // ALTERE ESTA SENHA!
 
+// IMPORTANTE: Substitua pela sua chave secreta do Google reCAPTCHA
+// Obtenha suas chaves em: https://www.google.com/recaptcha/admin
+$RECAPTCHA_SECRET_KEY = '6LcZbiAsAAAAAAeEOA46QOGdsdNUDpBUiE93ehjZ';
+
+/**
+ * Verifica o reCAPTCHA v2
+ * @param string $response - Token do reCAPTCHA
+ * @param string $secretKey - Chave secreta do reCAPTCHA
+ * @return bool - true se válido, false se inválido
+ */
+function verifyCaptcha($response, $secretKey) {
+    if (empty($response)) {
+        return false;
+    }
+
+    $verifyURL = 'https://www.google.com/recaptcha/api/siteverify';
+    $data = [
+        'secret' => $secretKey,
+        'response' => $response,
+        'remoteip' => $_SERVER['REMOTE_ADDR']
+    ];
+
+    $options = [
+        'http' => [
+            'method' => 'POST',
+            'header' => 'Content-Type: application/x-www-form-urlencoded',
+            'content' => http_build_query($data),
+            'timeout' => 10
+        ]
+    ];
+
+    $context = stream_context_create($options);
+    $result = @file_get_contents($verifyURL, false, $context);
+
+    if ($result === false) {
+        error_log('reCAPTCHA: Erro ao conectar com Google API');
+        return false;
+    }
+
+    $json = json_decode($result, true);
+    return isset($json['success']) && $json['success'] === true;
+}
+
 // Verificar login
 if (!isset($_SESSION['admin_logged_in'])) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-        if ($_POST['username'] === $ADMIN_USERNAME && $_POST['password'] === $ADMIN_PASSWORD) {
+        // Verificar CAPTCHA primeiro
+        $captchaResponse = $_POST['g-recaptcha-response'] ?? '';
+
+        if (!verifyCaptcha($captchaResponse, $RECAPTCHA_SECRET_KEY)) {
+            $login_error = 'Por favor, complete a verificação CAPTCHA';
+        } elseif ($_POST['username'] === $ADMIN_USERNAME && $_POST['password'] === $ADMIN_PASSWORD) {
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_username'] = $ADMIN_USERNAME;
             header('Location: index.php');
@@ -309,10 +357,10 @@ try {
                 <li><a href="notifications.php">📢 Notificações</a></li>
                 <li><a href="sessions.php">👥 Sessões Ativas</a></li>
                 <li><a href="devices.php">💻 Dispositivos</a></li>
+                <li><a href="bans.php">🚫 Banimentos</a></li>
                 <li><a href="servers.php">🎮 Servidores</a></li>
                 <li><a href="mods.php">📦 Mods</a></li>
                 <li><a href="news.php">📰 Notícias</a></li>
-                <li><a href="logout.php" style="background: #e74c3c; color: white;">🚪 Sair</a></li>
             </ul>
         </nav>
 
@@ -365,7 +413,7 @@ try {
                                 <td><strong>v<?= htmlspecialchars($version['launcher_version']) ?></strong></td>
                                 <td><?= $version['count'] ?></td>
                                 <td>
-                                    <?php if ($version['launcher_version'] === '1.1.2'): ?>
+                                    <?php if ($version['launcher_version'] === '1.1.3'): ?>
                                         <span class="badge badge-success">Atual</span>
                                     <?php else: ?>
                                         <span class="badge badge-warning">Antiga</span>

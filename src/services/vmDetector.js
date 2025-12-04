@@ -340,8 +340,6 @@ class VMDetectorService {
      * @returns {Object} Resultado completo da detecção
      */
     detect() {
-        console.log('[VMDetector] Iniciando detecção de VM...');
-
         const checks = {
             manufacturer: this.checkManufacturer(),
             macAddress: this.checkMacAddress(),
@@ -368,12 +366,6 @@ class VMDetectorService {
             checks: checks,
             detectedAt: new Date().toISOString()
         };
-
-        console.log('[VMDetector] Resultado:', {
-            isVM: result.isVM,
-            confidence: `${result.confidence}/${result.maxConfidence}`,
-            reasons: result.reasons
-        });
 
         return result;
     }

@@ -49,8 +49,17 @@ function shortenPath(fullPath) {
         relevantParts = relevantParts.slice(-3);
     }
 
-    // Formatar no estilo Windows 11: > Pasta > Subpasta
-    return '> ' + relevantParts.join(' > ');
+    // Formatar com barras modernas: Pasta / Subpasta
+    return relevantParts.join(' / ');
+}
+
+// Função auxiliar para atualizar o caminho da pasta preservando o ícone
+function updateGamePathDisplay(pathText) {
+    const pathElement = document.getElementById('settingsGamePath');
+    if (!pathElement) return;
+
+    // Usar emoji de pasta como ícone (sempre funciona)
+    pathElement.innerHTML = `<span style="font-size: 14px;">📁</span><span class="path-text">${pathText}</span>`;
 }
 
 // Estado global de download (independente da categoria selecionada)
@@ -640,7 +649,6 @@ let userWantsAutoInstall = false; // true quando usuário clica em "Atualizar" n
 
 // Listener: Atualização disponível COM forceUpdate (download automático)
 ipcRenderer.on('update-available', (event, info) => {
-    console.log('[Update] Atualização FORÇADA disponível:', info.version);
     pendingUpdate = info;
     isForceUpdate = true;
     showUpdateModal(info, 'downloading');
@@ -648,7 +656,6 @@ ipcRenderer.on('update-available', (event, info) => {
 
 // Listener: Atualização disponível SEM forceUpdate (mostrar modal de escolha)
 ipcRenderer.on('update-available-optional', (event, info) => {
-    console.log('[Update] Atualização OPCIONAL disponível:', info.version);
     pendingUpdate = info;
     isForceUpdate = false;
     // Mostrar modal perguntando se quer atualizar agora ou depois
@@ -657,13 +664,11 @@ ipcRenderer.on('update-available-optional', (event, info) => {
 
 // Listener: Download completo
 ipcRenderer.on('update-downloaded', (event, info) => {
-    console.log('[Update] Download completo:', info.version);
     updateDownloadComplete = true;
     pendingUpdate = info;
 
     if (isForceUpdate || userWantsAutoInstall) {
         // ForceUpdate ou usuário escolheu "Atualizar": instalar automaticamente
-        console.log('[Update] Instalando automaticamente...');
         // Pequeno delay para garantir que o modal apareça antes do app fechar
         setTimeout(() => {
             ipcRenderer.send('install-update');
@@ -679,6 +684,36 @@ ipcRenderer.on('update-downloaded', (event, info) => {
 ipcRenderer.on('update-error', (event, errorMessage) => {
     console.error('[Update] Erro:', errorMessage);
     showUpdateError(errorMessage);
+});
+
+// Listener: Atualização de config em background (cache refresh)
+ipcRenderer.on('config-updated', (event, freshConfig) => {
+    console.log('[Config] Nova configuração recebida em background');
+
+    // Atualizar config global
+    appConfig = freshConfig;
+
+    // Re-aplicar configurações que podem ter mudado
+    updateCategoryTabNames();
+
+    // Atualizar servidores da categoria atual se mudou
+    if (selectedCategory && freshConfig.categories && freshConfig.categories[selectedCategory]) {
+        setupServerMenu();
+
+        // Re-query do servidor selecionado caso a lista tenha mudado
+        const currentServer = getCurrentServer();
+        if (currentServer) {
+            updateServerStatus();
+        }
+    }
+
+    // Atualizar mods se estiver na aba de mods
+    const modsTab = document.querySelector('.tab-button[data-tab="mods"]');
+    if (modsTab && modsTab.classList.contains('active')) {
+        loadMods();
+    }
+
+    console.log('[Config] UI atualizada com nova configuração');
 });
 
 // Modal de ESCOLHA - pergunta se quer atualizar agora ou depois
@@ -1036,7 +1071,7 @@ function setupEventListeners() {
     elements.btnChangeGameFolder.addEventListener('click', async () => {
         const result = await ipcRenderer.invoke('select-game-folder', selectedCategory);
         if (result.success) {
-            elements.settingsGamePath.textContent = shortenPath(result.path);
+            updateGamePathDisplay(shortenPath(result.path));
             elements.settingsGamePath.title = result.path; // Caminho completo no tooltip
             gameState.gamePath = result.path;
             showToast('Pasta alterada com sucesso');
@@ -1144,10 +1179,10 @@ async function openSettingsSidebar() {
     // Pasta do jogo - buscar diretamente do store (para categoria atual)
     const savedGamePath = await ipcRenderer.invoke('get-game-path', selectedCategory);
     if (savedGamePath) {
-        elements.settingsGamePath.textContent = shortenPath(savedGamePath);
+        updateGamePathDisplay(shortenPath(savedGamePath));
         elements.settingsGamePath.title = savedGamePath; // Caminho completo no tooltip
     } else {
-        elements.settingsGamePath.textContent = 'Não configurado';
+        updateGamePathDisplay('Não configurado');
         elements.settingsGamePath.title = '';
     }
 
@@ -1410,11 +1445,43 @@ async function queryServer(category, index) {
 }
 
 async function queryAllServers() {
-    const categoryData = appConfig.categories[selectedCategory];
-    if (!categoryData || !categoryData.servers) return;
+    // Query servidores de todas as categorias em paralelo
+    const queryPromises = [];
 
-    for (let i = 0; i < categoryData.servers.length; i++) {
-        await queryServer(selectedCategory, i);
+    for (const category in appConfig.categories) {
+        const categoryData = appConfig.categories[category];
+        if (!categoryData || !categoryData.servers) continue;
+
+        for (let i = 0; i < categoryData.servers.length; i++) {
+            // Fazer queries em paralelo e atualizar contador após cada resposta
+            queryPromises.push(
+                queryServer(category, i).then(() => {
+                    updateTotalPlayersCount(); // Atualizar a cada servidor que responde
+                })
+            );
+        }
+    }
+
+    // Esperar todas as queries completarem
+    await Promise.all(queryPromises);
+}
+
+function updateTotalPlayersCount() {
+    let totalPlayers = 0;
+
+    // Somar players de todos os servidores de todas as categorias
+    for (const key in serverStatuses) {
+        const status = serverStatuses[key];
+        if (status && status.online && status.players) {
+            totalPlayers += status.players;
+        }
+    }
+
+    // Atualizar elemento no DOM
+    const playersCountEl = document.querySelector('.players-count');
+    if (playersCountEl) {
+        // Formatar número com separador de milhar
+        playersCountEl.textContent = totalPlayers.toLocaleString('pt-BR');
     }
 }
 
@@ -1980,11 +2047,9 @@ let navigationInitialized = false;
 // Inicializar navegação
 function initSubNavigation() {
     if (navigationInitialized) {
-        console.log('initSubNavigation já foi inicializado, pulando...');
         return;
     }
 
-    console.log('initSubNavigation() chamado');
     navigationInitialized = true;
 
     // Botões da página principal
@@ -2425,10 +2490,29 @@ async function uninstallMod(mod) {
         const result = await ipcRenderer.invoke('uninstall-mod', {
             modId: mod.id,
             category: selectedCategory,
-            gamePath: gameState.gamePath
+            gamePath: gameState.gamePath,
+            availableMods: modsData // Passar lista de mods para verificar dependências
         });
 
         if (result.success) {
+            // Se mods dependentes foram removidos, notificar o usuário
+            if (result.dependentModsRemoved && result.dependentModsRemoved.length > 0) {
+                const dependentNames = result.dependentModsRemoved.join(', ');
+                downloadNotifications.showMessage('info', `Mods dependentes também foram removidos: ${dependentNames}`);
+
+                // Remover mods dependentes da lista de instalados
+                result.dependentModsRemoved.forEach(depName => {
+                    const depMod = modsData.find(m => m.name === depName);
+                    if (depMod) {
+                        const index = installedMods.indexOf(depMod.id);
+                        if (index > -1) {
+                            installedMods.splice(index, 1);
+                        }
+                        updateModButtons(depMod.id);
+                    }
+                });
+            }
+
             // Remover do array de mods instalados
             const index = installedMods.indexOf(mod.id);
             if (index > -1) {
@@ -2537,4 +2621,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+});
+
+// ==========================================
+// Listeners IPC para Notificações
+// ==========================================
+
+// Navegar para uma categoria específica quando notificação é clicada
+ipcRenderer.on('navigate-to', (_event, page) => {
+    if (page && ['rp', 'dm', 'dayz'].includes(page)) {
+        // Trocar categoria usando a função correta
+        selectCategory(page, true);
+    }
+});
+
+// Conectar automaticamente em um servidor quando notificação é clicada
+ipcRenderer.on('trigger-play', (_event, serverId) => {
+    // Encontrar o servidor pelo ID
+    const category = appConfig.categories[selectedCategory];
+    if (!category || !category.servers) return;
+
+    const serverIndex = category.servers.findIndex(s => s.id === parseInt(serverId));
+    if (serverIndex !== -1) {
+        // Selecionar o servidor usando a função correta
+        selectServer(serverIndex);
+
+        // Aguardar um momento e iniciar o jogo
+        setTimeout(() => {
+            if (elements.btnPlay && !elements.btnPlay.disabled) {
+                launchGame();
+            }
+        }, 500);
+    }
 });

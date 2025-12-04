@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO launcher_mods (mod_id, name, author, description, full_description, image, category, game_category, popular, dependencies, download_url, version, size, order, active)
+                INSERT INTO launcher_mods (mod_id, name, author, description, full_description, image, category, game_category, popular, dependencies, download_url, version, size, `order`, active)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("
                 UPDATE launcher_mods
-                SET mod_id = ?, name = ?, author = ?, description = ?, full_description = ?, image = ?, category = ?, game_category = ?, popular = ?, dependencies = ?, download_url = ?, version = ?, size = ?, order = ?, active = ?
+                SET mod_id = ?, name = ?, author = ?, description = ?, full_description = ?, image = ?, category = ?, game_category = ?, popular = ?, dependencies = ?, download_url = ?, version = ?, size = ?, `order` = ?, active = ?
                 WHERE id = ?
             ");
             $stmt->execute([
@@ -98,10 +98,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Buscar todos os mods
-$mods = $pdo->query("
-    SELECT * FROM launcher_mods
-    ORDER BY game_category, category, name
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $mods = $pdo->query("
+        SELECT * FROM launcher_mods
+        ORDER BY game_category, category, name
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    die('Erro ao buscar mods: ' . $e->getMessage() . '<br><br>Provavelmente a tabela não existe. Execute o arquivo database/content_tables.sql no MySQL.');
+}
 
 // Contar mods por categoria de jogo
 $gameCategories = ['rp' => 0, 'dm' => 0, 'dayz' => 0];
@@ -486,10 +490,10 @@ function formatSize($bytes) {
                 <li><a href="notifications.php">📢 Notificações</a></li>
                 <li><a href="sessions.php">👥 Sessões Ativas</a></li>
                 <li><a href="devices.php">💻 Dispositivos</a></li>
+                <li><a href="bans.php">🚫 Banimentos</a></li>
                 <li><a href="servers.php">🎮 Servidores</a></li>
                 <li><a href="mods.php" class="active">📦 Mods</a></li>
                 <li><a href="news.php">📰 Notícias</a></li>
-                <li><a href="index.php?logout=1">🚪 Sair</a></li>
             </ul>
         </nav>
 

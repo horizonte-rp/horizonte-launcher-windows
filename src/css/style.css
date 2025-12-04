@@ -359,7 +359,7 @@ body {
     position: relative;
     z-index: 10;
     height: 100vh;
-    padding: 0 35px;
+    padding: 0 30px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -377,7 +377,7 @@ body {
 
 .left-panel {
     width: 500px;
-    padding-top: 60px;
+    padding-top: 35px;
 }
 
 /* Server Name - Estilo Arizona */
@@ -387,9 +387,33 @@ body {
     font-weight: 900;
     color: white;
     text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     letter-spacing: 1px;
     line-height: 1;
+}
+
+/* Players Online Counter */
+.players-online {
+    font-family: 'Roboto', sans-serif;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.players-online .players-count {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.players-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #d5d5d5;
+    letter-spacing: 0.8px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Social Buttons - Estilo Arizona */
@@ -502,12 +526,13 @@ body {
 
 .news-title {
     font-family: 'Roboto', sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-    color: #8a8a8a;
+    font-size: 20px;
+    font-weight: 700;
+    color: #c0c0c0;
     margin-bottom: 20px;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
 }
 
 .news-cards {
@@ -580,8 +605,8 @@ body {
 .footer {
     position: fixed;
     bottom: 25px;
-    left: 25px;
-    right: 25px;
+    left: 30px;
+    right: 30px;
     height: 70px;
     background: rgba(10, 10, 15, 0.75);
     backdrop-filter: blur(10px);
@@ -763,6 +788,35 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     min-width: 280px;
     height: 46px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer Effect */
+.btn-play::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%);
+    animation: shimmer 7s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    14.3% {
+        left: 100%;
+    }
+    100% {
+        left: 100%;
+    }
 }
 
 .btn-play:hover {
@@ -1641,6 +1695,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 14px 16px;
+    min-height: 72px;
     background: var(--bg-tertiary);
     border-radius: 10px;
     margin-bottom: 10px;
@@ -1684,20 +1739,24 @@ body {
 .settings-path-clickable {
     cursor: pointer;
     display: inline-flex;
+    align-items: center;
+    gap: 6px;
     align-self: flex-start;
-    padding: 5px 10px;
+    padding: 2px 8px;
     border-radius: 5px;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    color: #4a9eff;
+    transition: color 0.2s ease;
     max-width: 100%;
+    line-height: 1.4;
 }
 
-.settings-path-clickable:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: var(--text-primary);
+.settings-path-clickable .path-text {
+    text-decoration: none;
+    transition: text-decoration 0.2s ease;
 }
 
-.settings-path-clickable:active {
-    background-color: rgba(255, 255, 255, 0.04);
+.settings-path-clickable:hover .path-text {
+    text-decoration: underline;
 }
 
 .settings-btn {

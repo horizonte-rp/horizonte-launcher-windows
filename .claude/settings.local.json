@@ -4,7 +4,8 @@
       "Bash(powershell:*)",
       "Bash(findstr:*)",
       "Bash(npm run build:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

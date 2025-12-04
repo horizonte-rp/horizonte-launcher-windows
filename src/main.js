@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -60,6 +60,8 @@ let store;
 let appConfig;
 let remoteConfig;
 let mainWindow;
+let tray = null;
+let isQuitting = false;
 
 // URL da API remota
 const API_URL = 'http://horizontegames.com/api/config.php';
@@ -155,36 +157,201 @@ function loadConfig() {
     }
 }
 
+// Função auxiliar para fazer requisições HTTP
+async function httpRequest(url, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+        const https = require('https');
+        const http = require('http');
+        const protocol = url.startsWith('https') ? https : http;
+
+        const request = protocol.get(url, { timeout }, (res) => {
+            let data = '';
+
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    resolve(parsed);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+
+        request.on('error', reject);
+        request.on('timeout', () => {
+            request.destroy();
+            reject(new Error('Timeout'));
+        });
+    });
+}
+
+// Buscar servers, news e mods de uma categoria específica dos novos endpoints
+async function fetchContentData(category) {
+    const baseUrl = 'http://horizontegames.com/api/content';
+    const result = {
+        servers: [],
+        news: [],
+        mods: []
+    };
+
+    // Fazer todas as requisições em paralelo
+    const promises = [
+        httpRequest(`${baseUrl}/servers.php?category=${category}`, 3000)
+            .then(data => {
+                if (data && Array.isArray(data.servers)) {
+                    result.servers = data.servers;
+                }
+            })
+            .catch(error => console.log(`[fetchContentData] Erro ao buscar servers de ${category}:`, error.message)),
+
+        httpRequest(`${baseUrl}/news.php?category=${category}`, 3000)
+            .then(data => {
+                if (data && Array.isArray(data.news)) {
+                    result.news = data.news;
+                }
+            })
+            .catch(error => console.log(`[fetchContentData] Erro ao buscar news de ${category}:`, error.message))
+    ];
+
+    // Buscar mods apenas para RP (uma vez só)
+    if (category === 'rp') {
+        promises.push(
+            httpRequest(`${baseUrl}/mods.php`, 3000)
+                .then(data => {
+                    if (data && Array.isArray(data.mods)) {
+                        result.mods = data.mods;
+                    }
+                })
+                .catch(error => console.log(`[fetchContentData] Erro ao buscar mods:`, error.message))
+        );
+    }
+
+    // Aguardar todas as requisições em paralelo
+    await Promise.all(promises);
+
+    return result;
+}
+
 // Buscar configurações remotas da API
 async function fetchRemoteConfig() {
     try {
-        const https = require('https');
-        const http = require('http');
-        const protocol = API_URL.startsWith('https') ? https : http;
+        // 1. Buscar configurações gerais do config.php
+        const config = await httpRequest(API_URL, 5000);
 
-        return new Promise((resolve, reject) => {
-            const request = protocol.get(API_URL, { timeout: 5000 }, (res) => {
-                let data = '';
+        if (!config) {
+            return null;
+        }
 
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => {
-                    try {
-                        const config = JSON.parse(data);
-                        resolve(config);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-            });
+        // 2. Buscar conteúdo dinâmico (servers, news, mods) para todas as categorias EM PARALELO
+        const categories = ['rp', 'dm', 'dayz'];
 
-            request.on('error', reject);
-            request.on('timeout', () => {
-                request.destroy();
-                reject(new Error('Timeout'));
-            });
+        // Fazer todas as requisições de categorias em paralelo
+        const contentResults = await Promise.all(
+            categories.map(category =>
+                fetchContentData(category).catch(error => {
+                    console.log(`[fetchRemoteConfig] Erro ao buscar conteúdo de ${category}:`, error.message);
+                    return { servers: [], news: [], mods: [] };
+                })
+            )
+        );
+
+        // 3. Processar resultados
+        let allMods = [];
+        contentResults.forEach((contentData, index) => {
+            const category = categories[index];
+
+            if (config.categories && config.categories[category]) {
+                // Se a API retornou servers, usar eles
+                if (contentData.servers.length > 0) {
+                    config.categories[category].servers = contentData.servers;
+                }
+
+                // Se a API retornou news, usar elas
+                if (contentData.news.length > 0) {
+                    config.categories[category].news = contentData.news;
+                }
+            }
+
+            // Coletar mods
+            if (contentData.mods.length > 0) {
+                allMods = allMods.concat(contentData.mods);
+            }
         });
+
+        // 4. Se conseguimos buscar mods da API, substituir os do config.php
+        if (allMods.length > 0) {
+            config.mods = allMods;
+        }
+
+        return config;
     } catch (error) {
+        console.log('[fetchRemoteConfig] Erro ao buscar configuração remota:', error.message);
         return null;
+    }
+}
+
+// Buscar configuração atual (usa cache se já carregada, senão busca da API)
+async function fetchConfig() {
+    if (remoteConfig) {
+        return remoteConfig;
+    }
+    remoteConfig = await fetchRemoteConfig();
+    return remoteConfig;
+}
+
+// Criar ícone na bandeja do sistema
+function createTray() {
+    try {
+        // Caminho do ícone (usando o ícone .ico do launcher)
+        const iconPath = path.join(__dirname, 'assets/images/icone32x32.png');
+
+        console.log('[Tray] Criando ícone da bandeja:', iconPath);
+
+        // Criar tray icon
+        tray = new Tray(iconPath);
+
+        // Tooltip ao passar mouse
+        tray.setToolTip('Horizonte Launcher');
+
+        // Menu de contexto (clique direito)
+        const contextMenu = Menu.buildFromTemplate([
+            {
+                label: 'Abrir Launcher',
+                click: () => {
+                    if (mainWindow) {
+                        mainWindow.show();
+                        mainWindow.focus();
+                    }
+                }
+            },
+            {
+                label: 'Sair',
+                click: () => {
+                    isQuitting = true;
+                    stopNotificationSystem();
+                    app.quit();
+                }
+            }
+        ]);
+
+        tray.setContextMenu(contextMenu);
+
+        // Clique simples no ícone: mostrar/ocultar janela
+        tray.on('click', () => {
+            if (mainWindow) {
+                if (mainWindow.isVisible()) {
+                    mainWindow.hide();
+                } else {
+                    mainWindow.show();
+                    mainWindow.focus();
+                }
+            }
+        });
+
+        console.log('[Tray] Ícone da bandeja criado com sucesso');
+    } catch (error) {
+        console.error('[Tray] Erro ao criar ícone da bandeja:', error);
     }
 }
 
@@ -243,6 +410,16 @@ function createWindow() {
         });
     }
 
+    // Interceptar fechamento da janela (X)
+    mainWindow.on('close', (event) => {
+        if (!isQuitting) {
+            // Apenas minimizar na bandeja se não estiver saindo
+            event.preventDefault();
+            mainWindow.hide();
+        }
+        // Se isQuitting = true, deixa fechar normalmente
+    });
+
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
@@ -250,15 +427,19 @@ function createWindow() {
 
 // Definir AppUserModelId ANTES do ready para garantir que funcione
 if (process.platform === 'win32') {
-    app.setAppUserModelId('com.horizontegames.launcher');
+    app.setAppUserModelId('Horizonte Launcher');
 }
 
 app.whenReady().then(() => {
     // Reforçar o AppUserModelId após o ready também
     if (process.platform === 'win32') {
-        app.setAppUserModelId('com.horizontegames.launcher');
+        app.setAppUserModelId('Horizonte Launcher');
     }
     createWindow();
+    createTray();
+
+    // Iniciar sistema de notificações e heartbeat
+    startNotificationSystem();
 
     // Verificar atualizações instantaneamente
     log.info('[AutoUpdater] Verificando atualizações...');
@@ -275,9 +456,8 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    // Não fazer nada - app continua rodando em background com tray
+    // Só fecha quando clicar em "Sair" no menu da bandeja
 });
 
 app.on('activate', () => {
@@ -410,17 +590,74 @@ ipcMain.handle('get-app-config', () => {
     return appConfig;
 });
 
-// Buscar configuração remota da API
+// Buscar configuração remota da API (com cache-first)
 ipcMain.handle('fetch-remote-config', async () => {
     try {
+        // 1. Verificar se há cache disponível
+        const cachedConfig = store ? store.get('remoteConfigCache') : null;
+        const cacheTimestamp = store ? store.get('remoteConfigCacheTimestamp') : null;
+
+        // Se houver cache válido (menos de 1 hora), retornar imediatamente
+        const cacheMaxAge = 60 * 60 * 1000; // 1 hora em ms
+        const isCacheValid = cachedConfig && cacheTimestamp && (Date.now() - cacheTimestamp < cacheMaxAge);
+
+        // 2. Se cache válido, retornar imediatamente e buscar em background
+        if (isCacheValid) {
+            // Retornar cache imediatamente (sem delay!)
+            remoteConfig = cachedConfig;
+            appConfig = { ...appConfig, ...remoteConfig };
+
+            // Buscar nova config em background (não bloqueia)
+            fetchRemoteConfig().then(freshConfig => {
+                if (freshConfig) {
+                    remoteConfig = freshConfig;
+                    appConfig = { ...appConfig, ...freshConfig };
+                    // Salvar no cache
+                    if (store) {
+                        store.set('remoteConfigCache', freshConfig);
+                        store.set('remoteConfigCacheTimestamp', Date.now());
+                    }
+                    // Notificar renderer que tem config nova (opcional)
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                        mainWindow.webContents.send('config-updated', freshConfig);
+                    }
+                }
+            }).catch(err => {
+                console.log('[fetch-remote-config] Erro ao atualizar cache em background:', err.message);
+            });
+
+            return { success: true, config: cachedConfig, fromCache: true };
+        }
+
+        // 3. Sem cache válido, buscar da API (primeira vez ou cache expirado)
         remoteConfig = await fetchRemoteConfig();
         if (remoteConfig) {
+            // Salvar no cache
+            if (store) {
+                store.set('remoteConfigCache', remoteConfig);
+                store.set('remoteConfigCacheTimestamp', Date.now());
+            }
             // Mesclar config remota com local (remota tem prioridade)
             appConfig = { ...appConfig, ...remoteConfig };
-            return { success: true, config: remoteConfig };
+            return { success: true, config: remoteConfig, fromCache: false };
         }
+
+        // 4. Falha: retornar cache antigo se existir (fallback)
+        if (cachedConfig) {
+            remoteConfig = cachedConfig;
+            appConfig = { ...appConfig, ...cachedConfig };
+            return { success: true, config: cachedConfig, fromCache: true, stale: true };
+        }
+
         return { success: false, error: 'Falha ao buscar configuração' };
     } catch (error) {
+        // Em caso de erro, tentar retornar cache mesmo expirado
+        const cachedConfig = store ? store.get('remoteConfigCache') : null;
+        if (cachedConfig) {
+            remoteConfig = cachedConfig;
+            appConfig = { ...appConfig, ...cachedConfig };
+            return { success: true, config: cachedConfig, fromCache: true, stale: true };
+        }
         return { success: false, error: error.message };
     }
 });
@@ -507,30 +744,32 @@ ipcMain.on('open-external', (event, pathOrUrl) => {
 // Buscar mods da API
 ipcMain.handle('fetch-mods', async () => {
     try {
-        const MODS_API_URL = 'http://horizontegames.com/api/config.php';
+        // Tentar buscar do endpoint de mods primeiro
+        const MODS_API_URL = 'http://horizontegames.com/api/content/mods.php';
 
-        return new Promise((resolve) => {
-            http.get(MODS_API_URL, { timeout: 5000 }, (res) => {
-                let data = '';
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => {
-                    try {
-                        const config = JSON.parse(data);
-                        // Extrair mods do config.php
-                        const mods = config.mods || [];
-                        resolve({ success: true, mods: mods });
-                    } catch (e) {
-                        // Retornar mods de exemplo se API falhar
-                        resolve({ success: true, mods: getDefaultMods() });
-                    }
-                });
-            }).on('error', () => {
-                resolve({ success: true, mods: getDefaultMods() });
-            }).on('timeout', () => {
-                resolve({ success: true, mods: getDefaultMods() });
-            });
-        });
+        try {
+            const modsData = await httpRequest(MODS_API_URL, 5000);
+            if (modsData && Array.isArray(modsData.mods) && modsData.mods.length > 0) {
+                return { success: true, mods: modsData.mods };
+            }
+        } catch (error) {
+            console.log('[fetch-mods] Erro ao buscar do endpoint de mods, tentando config.php:', error.message);
+        }
+
+        // Fallback: buscar do config.php (se o endpoint de mods falhar)
+        try {
+            const config = await httpRequest(API_URL, 5000);
+            if (config && Array.isArray(config.mods) && config.mods.length > 0) {
+                return { success: true, mods: config.mods };
+            }
+        } catch (error) {
+            console.log('[fetch-mods] Erro ao buscar do config.php:', error.message);
+        }
+
+        // Se tudo falhar, retornar mods padrão
+        return { success: true, mods: getDefaultMods() };
     } catch (error) {
+        console.log('[fetch-mods] Erro geral:', error.message);
         return { success: true, mods: getDefaultMods() };
     }
 });
@@ -726,20 +965,15 @@ ipcMain.handle('install-mod', async (event, { mod, category, gamePath }) => {
         const zipPath = path.join(tempDir, `${mod.id}.zip`);
 
         // Baixar o mod
-        console.log(`[MOD] Baixando ${mod.name} de ${mod.downloadUrl}`);
         await new Promise((resolve, reject) => {
             const protocol = mod.downloadUrl.startsWith('https') ? https : http;
             const file = fs.createWriteStream(zipPath);
             let downloadedBytes = 0;
 
             const handleResponse = (response) => {
-                console.log(`[MOD] Status do download: ${response.statusCode}`);
-                console.log(`[MOD] Content-Type: ${response.headers['content-type']}`);
-
                 if (response.statusCode === 302 || response.statusCode === 301) {
                     // Seguir redirecionamento
                     const redirectUrl = response.headers.location;
-                    console.log(`[MOD] Redirecionando para: ${redirectUrl}`);
                     const redirectProtocol = redirectUrl.startsWith('https') ? https : http;
 
                     file.close();
@@ -766,7 +1000,6 @@ ipcMain.handle('install-mod', async (event, { mod, category, gamePath }) => {
                 response.pipe(file);
                 file.on('finish', () => {
                     file.close();
-                    console.log(`[MOD] Download completo: ${downloadedBytes} bytes`);
 
                     // Verificar se o arquivo foi baixado
                     if (downloadedBytes === 0) {
@@ -776,7 +1009,6 @@ ipcMain.handle('install-mod', async (event, { mod, category, gamePath }) => {
 
                     // Verificar se o arquivo existe e tem tamanho válido
                     const stats = fs.statSync(zipPath);
-                    console.log(`[MOD] Tamanho do arquivo no disco: ${stats.size} bytes`);
 
                     if (stats.size === 0) {
                         fs.unlinkSync(zipPath);
@@ -813,9 +1045,8 @@ ipcMain.handle('install-mod', async (event, { mod, category, gamePath }) => {
                     const destPath = path.join(gamePath, entry.fileName);
 
                     if (/\/$/.test(entry.fileName)) {
-                        // Diretório
+                        // Diretório - criar mas NÃO registrar (registramos apenas arquivos)
                         fs.mkdirSync(destPath, { recursive: true });
-                        installedFiles.push(entry.fileName);
                         zipfile.readEntry();
                     } else {
                         // Arquivo
@@ -931,8 +1162,81 @@ ipcMain.handle('install-mod', async (event, { mod, category, gamePath }) => {
     }
 });
 
-// Desinstalar mod
-ipcMain.handle('uninstall-mod', async (event, { modId, category, gamePath }) => {
+// Função auxiliar para desinstalar arquivos de um mod
+async function uninstallModFiles(modId, category, gamePath, modsStore) {
+    const path = require('path');
+    const installedMods = modsStore.get(`${category}.mods`, []);
+
+    // Encontrar o mod a ser desinstalado
+    const modToUninstall = installedMods.find(m => {
+        const id = typeof m === 'string' ? m : m.id;
+        return id === modId;
+    });
+
+    if (!modToUninstall) {
+        return; // Mod já não está instalado
+    }
+
+    // Deletar arquivos físicos se temos a lista
+    if (modToUninstall && typeof modToUninstall === 'object' && modToUninstall.files) {
+        const filesToDelete = modToUninstall.files;
+        const dirsToCleanup = new Set(); // Coletar pastas para tentar limpar depois
+
+        // Primeiro: deletar apenas os arquivos
+        for (const file of filesToDelete) {
+            const filePath = path.join(gamePath, file);
+            try {
+                if (fs.existsSync(filePath)) {
+                    const stats = fs.statSync(filePath);
+                    if (!stats.isDirectory()) {
+                        // Deletar arquivo
+                        fs.unlinkSync(filePath);
+
+                        // Coletar TODAS as pastas no caminho (não só a pasta pai direta)
+                        let currentDir = path.dirname(filePath);
+                        while (currentDir !== gamePath && currentDir !== path.dirname(gamePath)) {
+                            dirsToCleanup.add(currentDir);
+                            currentDir = path.dirname(currentDir);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn(`Erro ao deletar ${filePath}:`, error.message);
+                // Se o arquivo está em uso, lançar erro imediatamente
+                if (error.code === 'EBUSY' || error.code === 'EPERM') {
+                    throw error;
+                }
+            }
+        }
+
+        // Segundo: tentar limpar pastas vazias (da mais profunda para a mais rasa)
+        const sortedDirs = Array.from(dirsToCleanup).sort((a, b) => b.length - a.length);
+        for (const dir of sortedDirs) {
+            try {
+                // Verificar se a pasta existe e está vazia
+                if (fs.existsSync(dir)) {
+                    const files = fs.readdirSync(dir);
+                    if (files.length === 0) {
+                        // Pasta vazia, pode deletar
+                        fs.rmdirSync(dir);
+                    }
+                }
+            } catch (error) {
+                // Ignorar erros ao limpar pastas vazias (não é crítico)
+            }
+        }
+    }
+
+    // Remover do registro de mods instalados
+    const updatedMods = installedMods.filter(m => {
+        const id = typeof m === 'string' ? m : m.id;
+        return id !== modId;
+    });
+    modsStore.set(`${category}.mods`, updatedMods);
+}
+
+// Desinstalar mod (com verificação de dependentes)
+ipcMain.handle('uninstall-mod', async (event, { modId, category, gamePath, availableMods }) => {
     const path = require('path');
     const Store = require('electron-store');
 
@@ -949,56 +1253,45 @@ ipcMain.handle('uninstall-mod', async (event, { modId, category, gamePath }) => 
         const modsStore = new Store({ name: 'installed-mods' });
         const installedMods = modsStore.get(`${category}.mods`, []);
 
-        // Encontrar o mod a ser desinstalado
-        const modToUninstall = installedMods.find(m => {
-            const id = typeof m === 'string' ? m : m.id;
-            return id === modId;
-        });
-
-        // Deletar arquivos físicos se temos a lista
-        if (modToUninstall && typeof modToUninstall === 'object' && modToUninstall.files) {
-            const filesToDelete = [...modToUninstall.files].reverse(); // Reverter para deletar arquivos antes de pastas
-
-            for (const file of filesToDelete) {
-                const filePath = path.join(gamePath, file);
-                try {
-                    if (fs.existsSync(filePath)) {
-                        const stats = fs.statSync(filePath);
-                        if (stats.isDirectory()) {
-                            // Deletar pasta (apenas se estiver vazia)
-                            try {
-                                fs.rmdirSync(filePath);
-                            } catch (e) {
-                                // Pasta não está vazia ou outro erro, tentar deletar recursivamente
-                                try {
-                                    fs.rmSync(filePath, { recursive: true, force: true });
-                                } catch (e2) {
-                                    console.warn(`Não foi possível deletar pasta: ${filePath}`, e2.message);
-                                }
-                            }
-                        } else {
-                            // Deletar arquivo
-                            fs.unlinkSync(filePath);
-                        }
-                    }
-                } catch (error) {
-                    console.warn(`Erro ao deletar ${filePath}:`, error.message);
-                    // Se o arquivo está em uso, lançar erro imediatamente
-                    if (error.code === 'EBUSY' || error.code === 'EPERM') {
-                        throw error;
+        // Verificar se há mods que dependem deste mod
+        const dependentMods = [];
+        if (availableMods && Array.isArray(availableMods)) {
+            for (const mod of availableMods) {
+                if (mod.dependencies && Array.isArray(mod.dependencies) && mod.dependencies.includes(modId)) {
+                    // Verificar se este mod dependente está instalado
+                    const isInstalled = installedMods.some(m => {
+                        const id = typeof m === 'string' ? m : m.id;
+                        return id === mod.id;
+                    });
+                    if (isInstalled) {
+                        dependentMods.push(mod.name);
                     }
                 }
             }
         }
 
-        // Remover do registro de mods instalados
-        const updatedMods = installedMods.filter(m => {
-            const id = typeof m === 'string' ? m : m.id;
-            return id !== modId;
-        });
-        modsStore.set(`${category}.mods`, updatedMods);
+        // Se há mods dependentes instalados, desinstalar todos primeiro
+        if (dependentMods.length > 0) {
+            for (const mod of availableMods) {
+                if (mod.dependencies && Array.isArray(mod.dependencies) && mod.dependencies.includes(modId)) {
+                    const isInstalled = installedMods.some(m => {
+                        const id = typeof m === 'string' ? m : m.id;
+                        return id === mod.id;
+                    });
+                    if (isInstalled) {
+                        await uninstallModFiles(mod.id, category, gamePath, modsStore);
+                    }
+                }
+            }
+        }
 
-        return { success: true };
+        // Agora desinstalar o mod principal
+        await uninstallModFiles(modId, category, gamePath, modsStore);
+
+        return {
+            success: true,
+            dependentModsRemoved: dependentMods
+        };
     } catch (error) {
         console.error('Erro ao desinstalar mod:', error);
 
@@ -1533,7 +1826,6 @@ ipcMain.handle('start-game-download', async (event, category) => {
             // Se tiver bytes já baixados, continuar de onde parou
             if (resumeBytes > 0) {
                 headers['Range'] = `bytes=${resumeBytes}-`;
-                console.log(`Solicitando Range: bytes=${resumeBytes}-`);
             }
 
             const request = protocol.get(url, { headers }, (response) => {
@@ -1873,7 +2165,6 @@ async function extractGame(zipPath, gamePath, category = 'rp', version = '1.0.0'
                                             fs.unlinkSync(fullPath);
                                         } catch (unlinkErr) {
                                             // Arquivo em uso - pular e continuar
-                                            console.log(`Arquivo em uso, pulando: ${fileName}`);
                                             readStream.resume(); // Drenar o stream
                                             zipfile.readEntry();
                                             return;
@@ -1887,12 +2178,10 @@ async function extractGame(zipPath, gamePath, category = 'rp', version = '1.0.0'
                                         zipfile.readEntry();
                                     });
 
-                                    writeStream.on('error', (err) => {
-                                        console.log(`Erro ao escrever arquivo: ${fileName} - ${err.message}`);
+                                    writeStream.on('error', () => {
                                         zipfile.readEntry();
                                     });
                                 } catch (writeErr) {
-                                    console.log(`Erro ao extrair arquivo: ${fileName} - ${writeErr.message}`);
                                     readStream.resume(); // Drenar o stream
                                     zipfile.readEntry();
                                 }
@@ -1989,7 +2278,6 @@ ipcMain.handle('install-drivers', async (event) => {
         const driverPath = path.join(driversPath, driver.file);
 
         if (!fs.existsSync(driverPath)) {
-            console.log(`Driver não encontrado: ${driver.file}`);
             results.push({ name: driver.name, status: 'not_found' });
             currentIndex++;
             continue;
@@ -2072,7 +2360,6 @@ async function initDiscordRPC() {
     // Verificar se está habilitado
     const enabled = store.get('discordRpcEnabled', true);
     if (!enabled) {
-        console.log('Discord RPC desabilitado nas configurações');
         return;
     }
 
@@ -2173,6 +2460,411 @@ ipcMain.handle('set-discord-rpc-enabled', async (event, enabled) => {
         destroyDiscordRPC();
     }
 
+    return { success: true };
+});
+
+// ==========================================
+// Sistema de Notificações e Heartbeat
+// ==========================================
+
+const { Notification } = require('electron');
+let heartbeatInterval = null;
+let notificationCheckInterval = null;
+let sessionId = null;
+let shownNotifications = new Set(); // Rastrear notificações já exibidas
+let cachedNotificationSoundBase64 = null; // Cache do áudio em base64 (carrega uma vez)
+
+/**
+ * Gera um ID único para a sessão
+ */
+function generateSessionId() {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+/**
+ * Baixa uma imagem de uma URL e retorna o caminho local
+ */
+async function downloadNotificationIcon(url) {
+    return new Promise((resolve, reject) => {
+        try {
+            const tempDir = app.getPath('temp');
+            const fileName = `notification_${Date.now()}.png`;
+            const filePath = path.join(tempDir, fileName);
+            const file = fs.createWriteStream(filePath);
+
+            const client = url.startsWith('https') ? require('https') : require('http');
+
+            client.get(url, (response) => {
+                response.pipe(file);
+                file.on('finish', () => {
+                    file.close();
+                    resolve(filePath);
+                });
+            }).on('error', (err) => {
+                fs.unlink(filePath, () => {});
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+/**
+ * Reproduz o som de notificação customizado usando janela invisível
+ */
+function playNotificationSound() {
+    try {
+        // Carregar áudio em cache (apenas na primeira vez)
+        if (!cachedNotificationSoundBase64) {
+            const soundPath = path.join(__dirname, 'assets/sounds/notification.mp3');
+
+            if (!fs.existsSync(soundPath)) {
+                return;
+            }
+
+            const audioBuffer = fs.readFileSync(soundPath);
+            cachedNotificationSoundBase64 = `data:audio/mpeg;base64,${audioBuffer.toString('base64')}`;
+        }
+
+        // Criar janela invisível para tocar o áudio
+        const audioWindow = new BrowserWindow({
+            show: false,
+            width: 1,
+            height: 1,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+                autoplayPolicy: 'no-user-gesture-required'
+            }
+        });
+
+        // HTML que toca o áudio com base64 embedado
+        const audioHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head><meta charset="UTF-8"></head>
+            <body>
+                <audio id="notificationSound">
+                    <source src="${cachedNotificationSoundBase64}" type="audio/mpeg">
+                </audio>
+                <script>
+                    const audio = document.getElementById('notificationSound');
+                    audio.volume = 1.0;
+                    audio.play().catch(() => {});
+                    audio.addEventListener('ended', () => setTimeout(() => window.close(), 100));
+                    setTimeout(() => window.close(), 5000);
+                </script>
+            </body>
+            </html>
+        `;
+
+        audioWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(audioHTML)}`);
+
+        // Destruir janela após 6 segundos (segurança)
+        setTimeout(() => {
+            if (!audioWindow.isDestroyed()) {
+                audioWindow.destroy();
+            }
+        }, 6000);
+
+    } catch (error) {
+        // Falha silenciosa - não impede notificação
+    }
+}
+
+/**
+ * Exibe uma notificação nativa do Windows
+ */
+async function showNotification(data) {
+    const { title, body, icon, silent = false } = data;
+
+    // Verificar se já foi exibida
+    if (data.id && shownNotifications.has(data.id)) {
+        return;
+    }
+
+    // Determinar qual ícone usar (logo padrão do launcher)
+    let notificationIcon = path.join(__dirname, 'assets/images/logo.png');
+
+    if (icon && (icon.startsWith('http://') || icon.startsWith('https://'))) {
+        // Tentar baixar imagem da URL
+        try {
+            notificationIcon = await downloadNotificationIcon(icon);
+        } catch (error) {
+            // Se falhar, usa o logo local
+        }
+    } else if (icon) {
+        // Se for um caminho local, usar diretamente
+        notificationIcon = icon;
+    }
+
+    // Criar notificação sempre em modo silencioso (vamos tocar nosso próprio som)
+    const notification = new Notification({
+        title: title || 'Horizonte Launcher',
+        body: body || '',
+        icon: notificationIcon,
+        silent: true, // Sempre silenciar som padrão do Windows
+        timeoutType: 'default'
+    });
+
+    // Tocar som customizado do Horizonte Launcher (não bloqueia a notificação)
+    try {
+        playNotificationSound();
+    } catch (error) {
+        // Falha silenciosa
+    }
+
+    // Ação ao clicar na notificação
+    notification.on('click', () => {
+        // Focar na janela do launcher
+        if (mainWindow) {
+            // Se a janela está oculta (na bandeja), mostrar ela
+            if (!mainWindow.isVisible()) {
+                mainWindow.show();
+            }
+            // Se a janela está minimizada, restaurar
+            if (mainWindow.isMinimized()) {
+                mainWindow.restore();
+            }
+            mainWindow.focus();
+        }
+
+        // Executar ação customizada
+        if (data.action) {
+            // Se é abrir URL, executar imediatamente (não depende da janela)
+            if (data.action.type === 'open_url') {
+                handleNotificationAction(data.action);
+            } else {
+                // Para outras ações (navigate, play), aguardar janela estar pronta
+                setTimeout(() => {
+                    handleNotificationAction(data.action);
+                }, 500);
+            }
+        }
+    });
+
+    notification.show();
+
+    // Marcar como exibida
+    if (data.id) {
+        shownNotifications.add(data.id);
+    }
+}
+
+/**
+ * Executa ação customizada da notificação
+ */
+function handleNotificationAction(action) {
+    try {
+        switch (action.type) {
+            case 'open_url':
+                let url = action.url;
+                // Adicionar protocolo se não tiver
+                if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+                if (url) {
+                    shell.openExternal(url);
+                }
+                break;
+            case 'navigate':
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('navigate-to', action.page);
+                }
+                break;
+            case 'play':
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('trigger-play', action.serverId);
+                }
+                break;
+        }
+    } catch (error) {
+        console.error('[Notification] Erro ao executar ação:', error);
+    }
+}
+
+/**
+ * Busca notificações pendentes da API
+ */
+async function checkPendingNotifications() {
+    try {
+        const config = await fetchConfig();
+        if (!config || !config.apiUrl) return;
+
+        const hwid = require('./services/hwid').getHWID();
+        const endpoint = `${config.apiUrl}/notifications/pending.php`;
+
+        const response = await new Promise((resolve, reject) => {
+            const url = new URL(endpoint);
+            const client = url.protocol === 'https:' ? require('https') : require('http');
+
+            const payload = JSON.stringify({
+                hwid: hwid.hash,
+                sessionId: sessionId
+            });
+
+            const options = {
+                hostname: url.hostname,
+                port: url.port || (url.protocol === 'https:' ? 443 : 80),
+                path: url.pathname,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(payload)
+                },
+                timeout: 5000 // 5 segundos - reduzido para não travar se API estiver lenta
+            };
+
+            const req = client.request(options, (res) => {
+                let body = '';
+                res.on('data', chunk => body += chunk);
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(body));
+                    } catch (e) {
+                        reject(new Error('Invalid JSON response'));
+                    }
+                });
+            });
+
+            req.on('error', reject);
+            req.on('timeout', () => {
+                req.destroy();
+                reject(new Error('Request timeout'));
+            });
+
+            req.write(payload);
+            req.end();
+        });
+
+        if (response.success && response.notifications && response.notifications.length > 0) {
+            // Exibir cada notificação pendente
+            for (const notification of response.notifications) {
+                await showNotification({
+                    id: notification.id,
+                    title: notification.title,
+                    body: notification.body,
+                    icon: notification.icon,
+                    silent: notification.silent === true,
+                    action: notification.action
+                });
+            }
+        }
+    } catch (error) {
+        // Falha silenciosa - não atrapalhar usuário
+    }
+}
+
+/**
+ * Envia heartbeat para API (rastrear sessão ativa)
+ */
+async function sendHeartbeat() {
+    try {
+        const config = await fetchConfig();
+        if (!config || !config.apiUrl) return;
+
+        const hwid = require('./services/hwid').getHWID();
+        const vmCheck = require('./services/vmDetector').detect();
+        const endpoint = `${config.apiUrl}/session/heartbeat.php`;
+
+        const payload = JSON.stringify({
+            sessionId: sessionId,
+            hwid: hwid.hash,
+            hwidComponents: hwid.components,
+            manufacturer: hwid.manufacturer,
+            isVM: vmCheck.isVM,
+            vmConfidence: vmCheck.confidence,
+            platform: process.platform,
+            arch: process.arch,
+            launcherVersion: require('../package.json').version,
+            timestamp: Date.now()
+        });
+
+        const url = new URL(endpoint);
+        const client = url.protocol === 'https:' ? require('https') : require('http');
+
+        const options = {
+            hostname: url.hostname,
+            port: url.port || (url.protocol === 'https:' ? 443 : 80),
+            path: url.pathname,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            },
+            timeout: 5000 // 5 segundos - reduzido para não travar se API estiver lenta
+        };
+
+        const req = client.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+                // Heartbeat enviado com sucesso
+            });
+        });
+
+        req.on('error', () => {
+            // Falha silenciosa
+        });
+
+        req.on('timeout', () => {
+            req.destroy();
+        });
+
+        req.write(payload);
+        req.end();
+    } catch (error) {
+        // Falha silenciosa
+    }
+}
+
+/**
+ * Inicia o sistema de notificações e heartbeat
+ */
+function startNotificationSystem() {
+    // Gerar ID da sessão
+    sessionId = generateSessionId();
+
+    // Enviar primeiro heartbeat após 1 segundo
+    setTimeout(() => {
+        sendHeartbeat();
+    }, 1000);
+
+    // Verificar notificações a cada 2 minutos
+    notificationCheckInterval = setInterval(() => {
+        checkPendingNotifications();
+    }, 2 * 60 * 1000); // 2 minutos
+
+    // Enviar heartbeat a cada 3 minutos
+    heartbeatInterval = setInterval(() => {
+        sendHeartbeat();
+    }, 3 * 60 * 1000); // 3 minutos
+
+    // Verificar notificações na inicialização (após 5 segundos)
+    setTimeout(() => {
+        checkPendingNotifications();
+    }, 5000);
+}
+
+/**
+ * Para o sistema de notificações e heartbeat
+ */
+function stopNotificationSystem() {
+    if (notificationCheckInterval) {
+        clearInterval(notificationCheckInterval);
+        notificationCheckInterval = null;
+    }
+
+    if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+    }
+}
+
+// IPC Handler para testar notificação (útil para debug)
+ipcMain.handle('test-notification', async (_event, data) => {
+    await showNotification(data);
     return { success: true };
 });
 

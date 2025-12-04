@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO launcher_news (category, title, image, link, order, active)
+                INSERT INTO launcher_news (category, title, image, link, `order`, active)
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("
                 UPDATE launcher_news
-                SET category = ?, title = ?, image = ?, link = ?, order = ?, active = ?
+                SET category = ?, title = ?, image = ?, link = ?, `order` = ?, active = ?
                 WHERE id = ?
             ");
             $stmt->execute([
@@ -80,10 +80,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Buscar todas as notícias
-$news = $pdo->query("
-    SELECT * FROM launcher_news
-    ORDER BY category, order, created_at DESC
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $news = $pdo->query("
+        SELECT * FROM launcher_news
+        ORDER BY category, `order`, created_at DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    die('Erro ao buscar notícias: ' . $e->getMessage() . '<br><br>Provavelmente a tabela não existe. Execute o arquivo database/content_tables.sql no MySQL.');
+}
 
 // Contar notícias por categoria
 $categories = ['rp' => 0, 'dm' => 0, 'dayz' => 0];
@@ -437,10 +441,10 @@ foreach ($news as $item) {
                 <li><a href="notifications.php">📢 Notificações</a></li>
                 <li><a href="sessions.php">👥 Sessões Ativas</a></li>
                 <li><a href="devices.php">💻 Dispositivos</a></li>
+                <li><a href="bans.php">🚫 Banimentos</a></li>
                 <li><a href="servers.php">🎮 Servidores</a></li>
                 <li><a href="mods.php">📦 Mods</a></li>
                 <li><a href="news.php" class="active">📰 Notícias</a></li>
-                <li><a href="index.php?logout=1">🚪 Sair</a></li>
             </ul>
         </nav>
 
