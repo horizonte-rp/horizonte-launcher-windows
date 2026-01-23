@@ -5,7 +5,7 @@ let appConfig = {};
 let userConfig = {};
 let selectedCategory = 'rp';
 let selectedServerIndex = 0;
-let selectedServerPerCategory = { rp: 0, dm: 0, dayz: 0 }; // Servidor selecionado por categoria
+let selectedServerPerCategory = { rp: null, dm: null, dayz: null }; // IP:porta do servidor selecionado por categoria
 
 // Estado do jogo (para categoria selecionada)
 let gameState = {
@@ -1116,6 +1116,12 @@ function setupEventListeners() {
                 return;
             }
 
+            // Limpar lista de mods instalados (foram removidos junto com o jogo)
+            if (removeResult.modsCleared) {
+                installedMods = [];
+                modsLoaded = false; // Forçar recarregamento se voltar para página de mods
+            }
+
             elements.progressText.textContent = 'Preparando download...';
 
             // Iniciar download
@@ -1322,8 +1328,8 @@ async function selectCategory(category, showLoading = false) {
         await loadMods();
     }
 
-    // Restaurar servidor salvo da categoria (ou 0 se não existir)
-    const savedServerIndex = selectedServerPerCategory[category] || 0;
+    // Restaurar servidor salvo da categoria pelo IP:porta (ou primeiro servidor se não existir)
+    const savedServerKey = selectedServerPerCategory[category];
 
     // Atualizar abas
     const categories = Object.keys(appConfig?.categories || {});
@@ -1357,8 +1363,14 @@ async function selectCategory(category, showLoading = false) {
     // Reconfigurar menu de servidores
     setupServerMenu();
 
-    // Selecionar servidor salvo da categoria (ou primeiro se não existir)
-    const serverIndex = (categoryData?.servers && savedServerIndex < categoryData.servers.length) ? savedServerIndex : 0;
+    // Encontrar índice do servidor pelo IP:porta salvo (ou primeiro se não existir/não encontrar)
+    let serverIndex = 0;
+    if (savedServerKey && categoryData?.servers) {
+        const foundIndex = categoryData.servers.findIndex(s => `${s.ip}:${s.port}` === savedServerKey);
+        if (foundIndex !== -1) {
+            serverIndex = foundIndex;
+        }
+    }
     selectServer(serverIndex);
 
     // Carregar notícias da categoria
@@ -1388,13 +1400,13 @@ function showLoadingScreen() {
 function selectServer(index) {
     selectedServerIndex = index;
 
-    // Salvar servidor por categoria
-    selectedServerPerCategory[selectedCategory] = index;
-
     const categoryData = appConfig.categories[selectedCategory];
     if (!categoryData || !categoryData.servers || !categoryData.servers[index]) return;
 
     const server = categoryData.servers[index];
+
+    // Salvar IP:porta do servidor por categoria (único e imutável)
+    selectedServerPerCategory[selectedCategory] = `${server.ip}:${server.port}`;
 
     // Atualizar Discord RPC com o nome do servidor
     updateDiscordRPC(`Servidor: ${server.name}`, categoryData?.name || 'Horizonte', server.discord);
@@ -1659,8 +1671,23 @@ async function launchGame() {
 
     elements.btnPlay.innerHTML = '<span class="btn-spinner"></span> JOGAR';
 
+    // Pegar dados do servidor selecionado para passar diretamente (evita problemas de cache)
+    const serverToLaunch = categoryData?.servers?.[selectedServerIndex];
+    if (!serverToLaunch) {
+        showAlert('Erro', 'Servidor não encontrado. Tente selecionar novamente.');
+        elements.btnPlay.innerHTML = 'JOGAR <i class="bi bi-play-fill play-icon"></i>';
+        elements.btnPlay.disabled = false;
+        isLaunching = false;
+        return;
+    }
+
     // Usar o caminho do jogo embutido (token já foi obtido no verify-auth)
-    const result = await ipcRenderer.invoke('launch-game', selectedCategory, selectedServerIndex, nickname, authResult.token);
+    // Passa IP e porta diretamente para evitar problemas de cache entre renderer e main
+    const result = await ipcRenderer.invoke('launch-game', selectedCategory, {
+        ip: serverToLaunch.ip,
+        port: serverToLaunch.port,
+        name: serverToLaunch.name
+    }, nickname, authResult.token);
 
     // Resetar flag de lançamento
     isLaunching = false;

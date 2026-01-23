@@ -413,7 +413,7 @@ try {
                                 <td><strong>v<?= htmlspecialchars($version['launcher_version']) ?></strong></td>
                                 <td><?= $version['count'] ?></td>
                                 <td>
-                                    <?php if ($version['launcher_version'] === '1.1.3'): ?>
+                                    <?php if ($version['launcher_version'] === '1.1.5'): ?>
                                         <span class="badge badge-success">Atual</span>
                                     <?php else: ?>
                                         <span class="badge badge-warning">Antiga</span>

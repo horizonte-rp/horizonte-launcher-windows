@@ -9,14 +9,14 @@ const os = require('os');
 class VMDetectorService {
     constructor() {
         // Fabricantes conhecidos de VMs
+        // Nota: 'microsoft corporation' foi removido pois causa falsos positivos
+        // em PCs com Hyper-V habilitado (WSL2, Docker, Windows Sandbox)
         this.vmManufacturers = [
             'vmware',
             'virtualbox',
             'oracle',
             'qemu',
             'xen',
-            'hyper-v',
-            'microsoft corporation', // Hyper-V
             'parallels',
             'innotek',
             'kvm',
@@ -66,12 +66,13 @@ class VMDetectorService {
         ];
 
         // Nomes de disco que indicam VM
+        // Nota: 'harddisk' foi removido pois alguns discos físicos legítimos
+        // retornam esse nome no WMIC
         this.vmDiskNames = [
             'vbox',
             'vmware',
-            'virtual',
-            'qemu',
-            'harddisk'
+            'virtual hd',
+            'qemu'
         ];
     }
 
@@ -347,13 +348,15 @@ class VMDetectorService {
             drivers: this.checkDrivers(),
             registry: this.checkRegistry(),
             diskName: this.checkDiskName(),
-            bios: this.checkBIOS(),
-            resources: this.checkResources()
+            bios: this.checkBIOS()
+            // Nota: checkResources() removido pois causa muitos falsos positivos
+            // em PCs antigos ou com hardware limitado
         };
 
         // Conta quantas verificações detectaram VM
         const detections = Object.values(checks).filter(c => c.detected);
-        const isVM = detections.length >= 2; // Precisa de pelo menos 2 indicadores
+        // Aumentado de 2 para 3 indicadores para reduzir falsos positivos
+        const isVM = detections.length >= 3;
 
         // Coleta todas as razões
         const reasons = detections.map(d => d.reason).filter(r => r);
@@ -381,7 +384,8 @@ class VMDetectorService {
         const detections = [manufacturer, macAddress, processes].filter(c => c.detected);
 
         return {
-            isVM: detections.length >= 1,
+            // Aumentado de 1 para 2 indicadores para reduzir falsos positivos
+            isVM: detections.length >= 2,
             confidence: detections.length,
             reasons: detections.map(d => d.reason).filter(r => r)
         };

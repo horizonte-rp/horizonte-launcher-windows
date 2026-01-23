@@ -1403,7 +1403,12 @@ ipcMain.handle('remove-game-folder', async (event, category) => {
         // Limpar versão instalada
         store.delete(`installedVersion_${category}`);
 
-        return { success: true };
+        // Limpar mods instalados da categoria
+        const Store = require('electron-store');
+        const modsStore = new Store({ name: 'installed-mods' });
+        modsStore.delete(category);
+
+        return { success: true, modsCleared: true };
     } catch (error) {
         return { success: false, error: error.message };
     }
@@ -1456,38 +1461,39 @@ ipcMain.handle('verify-auth', async (event, { nickname, serverId, authApiUrl }) 
 });
 
 // Iniciar jogo
-ipcMain.handle('launch-game', async (event, category, serverIndex, nickname, authToken = null) => {
-    // Recarregar config para garantir dados atualizados
-    loadConfig();
+ipcMain.handle('launch-game', async (event, category, serverData, nickname, authToken = null) => {
+    // serverData agora é um objeto { ip, port, name } passado diretamente pelo renderer
+    // Isso evita problemas de cache onde renderer e main podem ter listas diferentes
 
-    const categoryData = appConfig.categories[category];
-    if (!categoryData || !categoryData.servers || !categoryData.servers[serverIndex]) {
-        return { success: false, error: 'Servidor não encontrado' };
+    if (!serverData || !serverData.ip || !serverData.port) {
+        return { success: false, error: 'Dados do servidor inválidos' };
     }
 
-    const server = categoryData.servers[serverIndex];
+    const server = serverData;
 
     // Usar o caminho do jogo da categoria
     const gamePath = getGamePath(category);
 
     // Verificar se o jogo está instalado
     const sampPath = path.join(gamePath, 'samp.exe');
+    const sampcmdPath = path.join(gamePath, 'sampcmd.exe');
     const gtaExe = path.join(gamePath, 'gta_sa.exe');
+    const sampcmdUrl = appConfig?.sampcmdUrl || remoteConfig?.sampcmdUrl;
 
     if (!fs.existsSync(gtaExe)) {
         return { success: false, error: 'Jogo não instalado. Clique em "Baixar Jogo".' };
     }
 
-    if (!fs.existsSync(sampPath)) {
+    // Verificar se tem sampcmd.exe OU samp.exe OU pode baixar sampcmd.exe
+    const hasSampcmd = fs.existsSync(sampcmdPath);
+    const hasSamp = fs.existsSync(sampPath);
+    const canDownloadSampcmd = !!sampcmdUrl;
+
+    if (!hasSampcmd && !hasSamp && !canDownloadSampcmd) {
         return { success: false, error: 'SA-MP não encontrado na instalação' };
     }
 
     try {
-        const sampPath = path.join(gamePath, 'samp.exe');
-
-        if (!fs.existsSync(sampPath)) {
-            return { success: false, error: 'samp.exe não encontrado. Reinstale o jogo.' };
-        }
 
         // Configurar registro do Windows para o SA-MP encontrar o GTA
         const { execSync } = require('child_process');
@@ -1504,18 +1510,70 @@ ipcMain.handle('launch-game', async (event, category, serverIndex, nickname, aut
 
         const { spawn, exec } = require('child_process');
 
-        // Usar sampcmd.exe (ferramenta de linha de comando do SA-MP)
-        const sampcmdPath = path.join(gamePath, 'sampcmd.exe');
+        // Se sampcmd.exe não existir, baixar automaticamente
+        if (!hasSampcmd) {
+            if (canDownloadSampcmd) {
+                try {
+                    // Notificar renderer que está baixando
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                        mainWindow.webContents.send('sampcmd-downloading');
+                    }
 
-        if (!fs.existsSync(sampcmdPath)) {
-            // Fallback para samp.exe (sem suporte a token)
-            spawn(sampPath, [`${server.ip}:${server.port}`], {
-                cwd: gamePath,
-                detached: true,
-                stdio: 'ignore',
-                shell: true
-            }).unref();
-        } else {
+                    // Baixar sampcmd.exe
+                    const https = require('https');
+                    const http = require('http');
+                    const protocol = sampcmdUrl.startsWith('https') ? https : http;
+
+                    await new Promise((resolve, reject) => {
+                        const file = fs.createWriteStream(sampcmdPath);
+                        protocol.get(sampcmdUrl, (response) => {
+                            // Seguir redirects
+                            if (response.statusCode === 301 || response.statusCode === 302) {
+                                const redirectUrl = response.headers.location;
+                                const redirectProtocol = redirectUrl.startsWith('https') ? https : http;
+                                redirectProtocol.get(redirectUrl, (redirectResponse) => {
+                                    redirectResponse.pipe(file);
+                                    file.on('finish', () => {
+                                        file.close();
+                                        resolve();
+                                    });
+                                }).on('error', reject);
+                            } else {
+                                response.pipe(file);
+                                file.on('finish', () => {
+                                    file.close();
+                                    resolve();
+                                });
+                            }
+                        }).on('error', (err) => {
+                            fs.unlink(sampcmdPath, () => {});
+                            reject(err);
+                        });
+                    });
+                } catch (downloadError) {
+                    // Se falhar o download, usar samp.exe como fallback
+                    spawn(sampPath, [`${server.ip}:${server.port}`], {
+                        cwd: gamePath,
+                        detached: true,
+                        stdio: 'ignore',
+                        shell: true
+                    }).unref();
+                    return { success: true, fallback: true };
+                }
+            } else {
+                // Sem URL configurada, usar samp.exe como fallback
+                spawn(sampPath, [`${server.ip}:${server.port}`], {
+                    cwd: gamePath,
+                    detached: true,
+                    stdio: 'ignore',
+                    shell: true
+                }).unref();
+                return { success: true, fallback: true };
+            }
+        }
+
+        // sampcmd.exe existe (ou foi baixado), usar ele
+        {
             // Usar sampcmd com spawn
             const args = ['-c', '-h', server.ip, '-p', server.port.toString(), '-n', nickname];
 

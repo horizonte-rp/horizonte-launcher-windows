@@ -12,7 +12,7 @@ header('Access-Control-Allow-Origin: *');
 // Configuração do Launcher
 $config = [
     // Versão atual do launcher (altere quando lançar nova versão)
-    'version' => '1.1.4',
+    'version' => '1.1.5',
 
     // URL para download da nova versão (quando disponível)
     'updateUrl' => 'http://horizontegames.com/api/downloads/Horizonte%20Launcher.exe',
@@ -32,6 +32,9 @@ $config = [
     // URL da API para notificações e heartbeat
     'apiUrl' => 'http://horizontegames.com/api',
 
+    // URL para download do sampcmd.exe (baixado automaticamente se não existir)
+    'sampcmdUrl' => 'http://horizontegames.com/api/assets/sampcmd.exe',
+
     // Categorias de servidores
     'categories' => [
         'rp' => [
@@ -46,14 +49,6 @@ $config = [
                 'size' => 1073741824  // ~1GB
             ],
             'servers' => [
-                [
-                    'id' => 0,
-                    'name' => 'Localhost (Teste)',
-                    'ip' => '127.0.0.1',
-                    'port' => 7777,
-                    'maxPlayers' => 100,
-                    'discord' => ''
-                ],
                 [
                     'id' => 1,
                     'name' => 'Horizonte RP #1',
