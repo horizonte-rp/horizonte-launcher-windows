@@ -2681,3 +2681,4 @@ ipcRenderer.on('trigger-play', (_event, serverId) => {
         }, 500);
     }
 });
+

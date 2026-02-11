@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `launcher_sessions` (
   `launcher_version` VARCHAR(20) NOT NULL,
   `first_seen` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_heartbeat` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `status` ENUM('active', 'idle', 'offline') DEFAULT 'active',
+  `status` ENUM('active', 'playing', 'idle', 'offline') DEFAULT 'active',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_session` (`session_id`),
   KEY `idx_hwid` (`hwid`),

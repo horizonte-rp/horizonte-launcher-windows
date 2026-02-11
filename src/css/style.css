@@ -2049,3 +2049,4 @@ body {
 .download-progress-bar.complete {
     background: linear-gradient(90deg, var(--accent-green) 0%, var(--accent-green-hover) 100%);
 }
+

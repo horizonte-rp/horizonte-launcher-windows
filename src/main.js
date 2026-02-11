@@ -66,6 +66,10 @@ let isQuitting = false;
 // URL da API remota
 const API_URL = 'http://horizontegames.com/api/config.php';
 
+// Status do jogo (idle/playing) - usado no heartbeat
+let gameStatus = 'idle';
+let gameMonitorInterval = null;
+
 // Estado do download
 let downloadState = {
     isDownloading: false,
@@ -1552,22 +1556,26 @@ ipcMain.handle('launch-game', async (event, category, serverData, nickname, auth
                     });
                 } catch (downloadError) {
                     // Se falhar o download, usar samp.exe como fallback
-                    spawn(sampPath, [`${server.ip}:${server.port}`], {
+                    const fallbackProc = spawn(sampPath, [`${server.ip}:${server.port}`], {
                         cwd: gamePath,
                         detached: true,
                         stdio: 'ignore',
                         shell: true
-                    }).unref();
+                    });
+                    fallbackProc.unref();
+                    startGameMonitor();
                     return { success: true, fallback: true };
                 }
             } else {
                 // Sem URL configurada, usar samp.exe como fallback
-                spawn(sampPath, [`${server.ip}:${server.port}`], {
+                const fallbackProc = spawn(sampPath, [`${server.ip}:${server.port}`], {
                     cwd: gamePath,
                     detached: true,
                     stdio: 'ignore',
                     shell: true
-                }).unref();
+                });
+                fallbackProc.unref();
+                startGameMonitor();
                 return { success: true, fallback: true };
             }
         }
@@ -1589,6 +1597,7 @@ ipcMain.handle('launch-game', async (event, category, serverData, nickname, auth
                 cwd: gamePath,
                 windowsHide: false
             });
+            startGameMonitor();
         }
 
         return { success: true };
@@ -2836,6 +2845,7 @@ async function sendHeartbeat() {
             platform: process.platform,
             arch: process.arch,
             launcherVersion: require('../package.json').version,
+            gameStatus: gameStatus,
             timestamp: Date.now()
         });
 
@@ -2857,14 +2867,10 @@ async function sendHeartbeat() {
         const req = client.request(options, (res) => {
             let body = '';
             res.on('data', chunk => body += chunk);
-            res.on('end', () => {
-                // Heartbeat enviado com sucesso
-            });
+            res.on('end', () => {});
         });
 
-        req.on('error', () => {
-            // Falha silenciosa
-        });
+        req.on('error', () => {});
 
         req.on('timeout', () => {
             req.destroy();
@@ -2874,6 +2880,46 @@ async function sendHeartbeat() {
         req.end();
     } catch (error) {
         // Falha silenciosa
+    }
+}
+
+/**
+ * Inicia monitoramento do processo gta_sa.exe
+ * Verifica periodicamente se o jogo está rodando de verdade
+ */
+function startGameMonitor() {
+    stopGameMonitor();
+    gameStatus = 'playing';
+    // Heartbeat imediato para registrar o status 'playing' agora
+    sendHeartbeat();
+
+    gameMonitorInterval = setInterval(() => {
+        try {
+            const { execSync } = require('child_process');
+            const output = execSync('tasklist /FI "IMAGENAME eq gta_sa.exe" /NH', {
+                windowsHide: true,
+                encoding: 'utf8',
+                timeout: 3000
+            });
+
+            if (output.includes('gta_sa.exe')) {
+                gameStatus = 'playing';
+            } else {
+                gameStatus = 'idle';
+                stopGameMonitor();
+                sendHeartbeat(); // Heartbeat imediato ao fechar o jogo
+            }
+        } catch (err) {
+            gameStatus = 'idle';
+            stopGameMonitor();
+        }
+    }, 15000); // A cada 15 segundos
+}
+
+function stopGameMonitor() {
+    if (gameMonitorInterval) {
+        clearInterval(gameMonitorInterval);
+        gameMonitorInterval = null;
     }
 }
 
@@ -2909,6 +2955,8 @@ function startNotificationSystem() {
  * Para o sistema de notificações e heartbeat
  */
 function stopNotificationSystem() {
+    stopGameMonitor();
+
     if (notificationCheckInterval) {
         clearInterval(notificationCheckInterval);
         notificationCheckInterval = null;
@@ -2924,6 +2972,148 @@ function stopNotificationSystem() {
 ipcMain.handle('test-notification', async (_event, data) => {
     await showNotification(data);
     return { success: true };
+});
+
+// ==========================================
+// Admin Stats (comando secreto)
+// ==========================================
+
+ipcMain.handle('fetch-admin-stats', async () => {
+    try {
+        const STATS_URL = 'http://horizontegames.com/api/admin/stats-api.php';
+        const ADMIN_KEY = 'HqW5Rxj81jaMt69y31qSXnhrtKIfA6';
+
+        return await new Promise((resolve, reject) => {
+            const http = require('http');
+            const options = {
+                timeout: 8000,
+                headers: { 'X-Admin-Key': ADMIN_KEY }
+            };
+
+            const request = http.get(STATS_URL, options, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (parsed.success) {
+                            resolve({ success: true, stats: parsed.stats });
+                        } else {
+                            resolve({ success: false, error: parsed.error || 'Erro desconhecido' });
+                        }
+                    } catch (e) {
+                        resolve({ success: false, error: 'Resposta inválida da API' });
+                    }
+                });
+            });
+
+            request.on('error', (err) => resolve({ success: false, error: err.message }));
+            request.on('timeout', () => {
+                request.destroy();
+                resolve({ success: false, error: 'Timeout' });
+            });
+        });
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// Admin Panel - Authentication
+ipcMain.handle('admin-auth', async (event, { username, password }) => {
+    try {
+        const AUTH_URL = 'http://horizontegames.com/api/admin/auth.php';
+        const postBody = JSON.stringify({ username, password });
+
+        return await new Promise((resolve) => {
+            const http = require('http');
+            const url = new URL(AUTH_URL);
+
+            const options = {
+                hostname: url.hostname,
+                port: url.port || 80,
+                path: url.pathname,
+                method: 'POST',
+                timeout: 10000,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(postBody)
+                }
+            };
+
+            const request = http.request(options, (res) => {
+                let responseData = '';
+                res.on('data', chunk => responseData += chunk);
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(responseData));
+                    } catch (e) {
+                        resolve({ success: false, error: 'Resposta inválida do servidor' });
+                    }
+                });
+            });
+
+            request.on('error', (err) => resolve({ success: false, error: err.message }));
+            request.on('timeout', () => {
+                request.destroy();
+                resolve({ success: false, error: 'Timeout - servidor não respondeu' });
+            });
+
+            request.write(postBody);
+            request.end();
+        });
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// Admin Panel - Generic CRUD API Proxy
+ipcMain.handle('admin-api-request', async (event, { module, action, data }) => {
+    try {
+        const CRUD_URL = 'http://horizontegames.com/api/admin/admin-crud-api.php';
+        const ADMIN_KEY = 'HqW5Rxj81jaMt69y31qSXnhrtKIfA6';
+        const postBody = JSON.stringify({ module, action, ...data });
+
+        return await new Promise((resolve) => {
+            const http = require('http');
+            const url = new URL(CRUD_URL);
+
+            const options = {
+                hostname: url.hostname,
+                port: url.port || 80,
+                path: url.pathname,
+                method: 'POST',
+                timeout: 15000,
+                headers: {
+                    'X-Admin-Key': ADMIN_KEY,
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(postBody)
+                }
+            };
+
+            const request = http.request(options, (res) => {
+                let responseData = '';
+                res.on('data', chunk => responseData += chunk);
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(responseData));
+                    } catch (e) {
+                        resolve({ success: false, error: 'Resposta inválida da API' });
+                    }
+                });
+            });
+
+            request.on('error', (err) => resolve({ success: false, error: err.message }));
+            request.on('timeout', () => {
+                request.destroy();
+                resolve({ success: false, error: 'Timeout' });
+            });
+
+            request.write(postBody);
+            request.end();
+        });
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
 });
 
 // ==========================================

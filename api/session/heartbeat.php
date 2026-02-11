@@ -53,6 +53,7 @@ try {
     $platform = $input['platform'];
     $arch = $input['arch'];
     $launcherVersion = $input['launcherVersion'];
+    $gameStatus = $input['gameStatus'] ?? 'idle'; // idle ou playing
 
     // Verificar se sessão já existe
     $checkQuery = "SELECT id FROM launcher_sessions WHERE session_id = ?";
@@ -62,6 +63,7 @@ try {
 
     if ($existingSession) {
         // Atualizar sessão existente
+        $status = ($gameStatus === 'playing') ? 'playing' : 'active';
         $updateQuery = "
             UPDATE launcher_sessions SET
                 hwid = ?,
@@ -73,7 +75,7 @@ try {
                 arch = ?,
                 launcher_version = ?,
                 last_heartbeat = NOW(),
-                status = 'active'
+                status = ?
             WHERE session_id = ?
         ";
 
@@ -87,6 +89,7 @@ try {
             $platform,
             $arch,
             $launcherVersion,
+            $status,
             $sessionId
         ]);
 
@@ -97,6 +100,7 @@ try {
         ];
     } else {
         // Criar nova sessão
+        $status = ($gameStatus === 'playing') ? 'playing' : 'active';
         $insertQuery = "
             INSERT INTO launcher_sessions (
                 session_id,
@@ -109,7 +113,7 @@ try {
                 arch,
                 launcher_version,
                 status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ";
 
         $stmt = $pdo->prepare($insertQuery);
@@ -122,7 +126,8 @@ try {
             $vmConfidence,
             $platform,
             $arch,
-            $launcherVersion
+            $launcherVersion,
+            $status
         ]);
 
         $response = [

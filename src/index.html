@@ -6,6 +6,7 @@
     <title>Horizonte Launcher</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/mods.css">
+    <link rel="stylesheet" href="css/admin-panel.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -386,6 +387,132 @@
         </div>
     </div>
 
+    <!-- Admin Login (Ctrl+Shift+F9) -->
+    <div class="admin-login-overlay" id="adminLoginOverlay">
+        <div class="admin-login-card">
+            <div class="admin-login-header">
+                <div class="admin-login-icon">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <h2>Admin Panel</h2>
+                <p>Autentique-se para acessar o painel</p>
+            </div>
+            <div class="admin-login-body">
+                <div class="admin-login-error" id="adminLoginError" style="display: none;">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span id="adminLoginErrorMsg">Erro</span>
+                </div>
+                <div class="admin-form-group">
+                    <label>Usuário</label>
+                    <input type="text" id="adminLoginUser" placeholder="Digite seu usuário" autocomplete="off">
+                </div>
+                <div class="admin-form-group">
+                    <label>Senha</label>
+                    <input type="password" id="adminLoginPass" placeholder="Digite sua senha" autocomplete="off">
+                </div>
+                <button class="admin-login-btn" id="adminLoginBtn">
+                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                </button>
+            </div>
+            <div class="admin-login-footer">
+                <span>Pressione Escape para cancelar</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel (Ctrl+Shift+F9) -->
+    <div class="admin-panel-overlay" id="adminPanelOverlay">
+        <div class="admin-panel">
+            <!-- Sidebar -->
+            <div class="admin-sidebar">
+                <div class="admin-sidebar-header">
+                    <h2><i class="bi bi-shield-lock-fill"></i> Admin Panel</h2>
+                    <span class="admin-version">Horizonte Launcher</span>
+                </div>
+                <nav class="admin-nav" id="adminNav">
+                    <button class="admin-nav-item active" data-section="dashboard">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </button>
+                    <button class="admin-nav-item" data-section="bans">
+                        <i class="bi bi-slash-circle"></i> Bans
+                    </button>
+                    <button class="admin-nav-item" data-section="notifications">
+                        <i class="bi bi-bell"></i> Notificações
+                    </button>
+                    <button class="admin-nav-item" data-section="devices">
+                        <i class="bi bi-pc-display"></i> Dispositivos
+                    </button>
+                    <button class="admin-nav-item" data-section="mods">
+                        <i class="bi bi-puzzle"></i> Mods
+                    </button>
+                    <button class="admin-nav-item" data-section="news">
+                        <i class="bi bi-newspaper"></i> Notícias
+                    </button>
+                </nav>
+                <div class="admin-sidebar-footer">
+                    <div class="admin-user-info" id="adminUserInfo">
+                        <i class="bi bi-person-circle"></i>
+                        <span id="adminUserName">Admin</span>
+                    </div>
+                    <button class="admin-btn admin-btn-secondary admin-btn-sm" id="adminLogoutBtn" style="width:100%;justify-content:center;margin-bottom:6px;">
+                        <i class="bi bi-box-arrow-left"></i> Sair
+                    </button>
+                    <button class="admin-close-btn" id="adminCloseBtn">
+                        <i class="bi bi-x-lg"></i> Fechar Painel
+                    </button>
+                    <span class="admin-shortcut-hint">Ctrl+Shift+F9</span>
+                </div>
+            </div>
+            <!-- Content Area -->
+            <div class="admin-content">
+                <div class="admin-content-header" id="adminContentHeader">
+                    <span class="admin-content-title" id="adminContentTitle">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </span>
+                    <div class="admin-content-actions" id="adminContentActions"></div>
+                </div>
+                <div class="admin-content-body" id="adminContentBody">
+                    <div class="admin-loading" id="adminLoading">
+                        <div class="admin-loading-spinner"></div>
+                        <span>Carregando...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Form Modal -->
+    <div class="admin-form-overlay" id="adminFormOverlay">
+        <div class="admin-form-modal">
+            <div class="admin-form-header">
+                <h3 id="adminFormTitle"><i class="bi bi-plus-lg"></i> <span>Novo Item</span></h3>
+                <button class="admin-form-close" id="adminFormClose"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="admin-form-body" id="adminFormBody"></div>
+            <div class="admin-form-footer">
+                <button class="admin-btn admin-btn-secondary" id="adminFormCancel">Cancelar</button>
+                <button class="admin-btn admin-btn-primary" id="adminFormSave"><i class="bi bi-check-lg"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Confirm Dialog -->
+    <div class="admin-confirm-overlay" id="adminConfirmOverlay">
+        <div class="admin-confirm-dialog">
+            <div class="admin-confirm-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <div class="admin-confirm-title" id="adminConfirmTitle">Confirmar ação</div>
+            <div class="admin-confirm-message" id="adminConfirmMessage">Tem certeza?</div>
+            <div class="admin-confirm-actions">
+                <button class="admin-btn admin-btn-secondary" id="adminConfirmCancel">Cancelar</button>
+                <button class="admin-btn admin-btn-danger" id="adminConfirmOk"><i class="bi bi-trash"></i> Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Toast Container -->
+    <div class="admin-toast-container" id="adminToastContainer"></div>
+
     <script src="js/renderer.js"></script>
+    <script src="js/admin-panel.js"></script>
 </body>
 </html>
