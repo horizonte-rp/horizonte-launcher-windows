@@ -1786,7 +1786,7 @@ ipcMain.handle('check-game-installed', (event, category = 'rp') => {
 });
 
 // Iniciar download do jogo
-ipcMain.handle('start-game-download', async (event, category) => {
+ipcMain.handle('start-game-download', async (event, category, variant) => {
     const http = require('http');
     const https = require('https');
 
@@ -1803,11 +1803,26 @@ ipcMain.handle('start-game-download', async (event, category) => {
     }
 
     const downloadInfo = categoryData.download;
-    if (!downloadInfo || !downloadInfo.url) {
+    if (!downloadInfo) {
         return { success: false, error: 'Download não disponível para esta categoria' };
     }
 
-    const downloadUrl = downloadInfo.url;
+    // Resolver URL baseado na variante selecionada (PC Fraco / PC Forte)
+    let downloadUrl;
+    if (variant && downloadInfo.variants && downloadInfo.variants[variant]) {
+        downloadUrl = downloadInfo.variants[variant].url;
+    } else {
+        downloadUrl = downloadInfo.url;
+    }
+
+    if (!downloadUrl) {
+        return { success: false, error: 'URL de download não disponível' };
+    }
+
+    // Salvar variante escolhida
+    if (variant) {
+        store.set(`gameVariant_${category}`, variant);
+    }
 
     if (downloadState.isDownloading && !downloadState.isPaused) {
         return { success: false, error: 'Download já em andamento' };

@@ -1103,6 +1103,16 @@ function setupEventListeners() {
         if (confirmed) {
             closeSettingsSidebar();
 
+            // Verificar variantes de download ANTES de remover arquivos
+            const categoryData = appConfig.categories?.[selectedCategory];
+            const variants = categoryData?.download?.variants;
+            let selectedVariant = null;
+
+            if (variants && Object.keys(variants).length > 0) {
+                selectedVariant = await showVariantSelector(variants);
+                if (!selectedVariant) return; // Cancelou, não remove nada
+            }
+
             // Marcar para reinstalar
             gameState.needsUpdate = true;
             gameState.installed = false;
@@ -1124,8 +1134,8 @@ function setupEventListeners() {
 
             elements.progressText.textContent = 'Preparando download...';
 
-            // Iniciar download
-            const result = await ipcRenderer.invoke('start-game-download', selectedCategory);
+            // Iniciar download com a variante selecionada
+            const result = await ipcRenderer.invoke('start-game-download', selectedCategory, selectedVariant);
             if (!result.success) {
                 showToast('Erro: ' + result.error);
             }
@@ -1578,14 +1588,22 @@ async function launchGame() {
             gameState.gamePath = folderResult.path;
         }
 
+        // Verificar se existem variantes de download (PC Fraco / PC Forte)
+        const categoryData = appConfig.categories?.[selectedCategory];
+        const variants = categoryData?.download?.variants;
+        let selectedVariant = null;
+
+        if (variants && Object.keys(variants).length > 0) {
+            selectedVariant = await showVariantSelector(variants);
+            if (!selectedVariant) return; // Cancelou
+        }
+
         gameState.installed = false;
         elements.progressText.textContent = 'Iniciando download...';
-
-        // Iniciar download
         elements.progressPercent.textContent = '0%';
         elements.progressFill.style.width = '0%';
 
-        const result = await ipcRenderer.invoke('start-game-download', selectedCategory);
+        const result = await ipcRenderer.invoke('start-game-download', selectedCategory, selectedVariant);
         if (!result.success) {
             showToast('Erro ao iniciar download: ' + result.error);
         }
@@ -1810,6 +1828,71 @@ function showAlert(title, message) {
 // Atalho para confirmação
 function showConfirm(title, message, danger = false) {
     return showModal({ title, message, confirmText: 'Confirmar', danger });
+}
+
+// ==========================================
+// Variant Selector (PC Fraco / PC Médio-Forte)
+// ==========================================
+function showVariantSelector(variants) {
+    return new Promise((resolve) => {
+        const existingModal = document.querySelector('.custom-modal');
+        if (existingModal) existingModal.remove();
+
+        const modal = document.createElement('div');
+        modal.className = 'custom-modal';
+
+        const variantKeys = Object.keys(variants);
+        const cardsHtml = variantKeys.map(key => {
+            const v = variants[key];
+            const sizeText = v.size ? (v.size / (1024 * 1024 * 1024)).toFixed(1) + ' GB' : '';
+            const imageHtml = v.image ? `<div class="variant-image" style="background-image: url('${v.image}')"></div>` : '';
+            return `
+                <div class="variant-card ${v.image ? 'has-image' : ''}" data-variant="${key}">
+                    ${imageHtml}
+                    <div class="variant-body">
+                        <div class="variant-icon">
+                            <i class="bi ${v.icon || 'bi-download'}"></i>
+                        </div>
+                        <h4 class="variant-title">${v.label}</h4>
+                        <p class="variant-desc">${v.description}</p>
+                        ${sizeText ? `<span class="variant-size">${sizeText}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        modal.innerHTML = `
+            <div class="variant-modal-content">
+                <h3>Escolha a versão do jogo</h3>
+                <p class="variant-subtitle">Selecione a opção mais adequada para o seu computador</p>
+                <div class="variant-cards">
+                    ${cardsHtml}
+                </div>
+                <button class="variant-cancel">Cancelar</button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        setTimeout(() => modal.classList.add('show'), 10);
+
+        const closeModal = (result) => {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.remove();
+                resolve(result);
+            }, 300);
+        };
+
+        modal.querySelectorAll('.variant-card').forEach(card => {
+            card.addEventListener('click', () => closeModal(card.dataset.variant));
+        });
+
+        modal.querySelector('.variant-cancel').addEventListener('click', () => closeModal(null));
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(null);
+        });
+    });
 }
 
 // ==========================================

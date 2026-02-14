@@ -12,7 +12,7 @@ header('Access-Control-Allow-Origin: *');
 // Configuração do Launcher
 $config = [
     // Versão atual do launcher (altere quando lançar nova versão)
-    'version' => '1.1.7',
+    'version' => '1.1.8',
 
     // URL para download da nova versão (quando disponível)
     'updateUrl' => 'http://horizontegames.com/api/downloads/Horizonte%20Launcher.exe',
@@ -46,7 +46,25 @@ $config = [
             'download' => [
                 'url' => 'https://horizonte-rp.com/assets/game.zip',
                 'version' => '1.0.0',
-                'size' => 1073741824  // ~1GB
+                'size' => 1073741824,
+                'variants' => [
+                    'low' => [
+                        'label' => 'PC Fraco',
+                        'description' => 'Gráficos reduzidos, sem mods. Prioriza FPS.',
+                        'icon' => 'bi-speedometer',
+                        'image' => 'http://horizontegames.com/api/assets/images/gta_low.png',
+                        'url' => 'http://horizonte-rp.com/assets/gtalow.zip',
+                        'size' => 0
+                    ],
+                    'full' => [
+                        'label' => 'PC Médio/Forte',
+                        'description' => 'Gráficos completos com mods dinâmicos.',
+                        'icon' => 'bi-display',
+                        'image' => 'http://horizontegames.com/api/assets/images/gta_high.png',
+                        'url' => 'http://horizonte-rp.com/assets/gtahigh.zip',
+                        'size' => 0
+                    ]
+                ]
             ],
             'servers' => [
                 [
