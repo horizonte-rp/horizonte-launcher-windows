@@ -15,7 +15,7 @@
             "description": "Gráficos reduzidos, sem mods. Prioriza FPS.",
             "icon": "bi-speedometer",
             "image": "http://horizontegames.com/api/assets/images/gta_low.png",
-            "url": "http://horizonte-rp.com/assets/gtalow.zip",
+            "url": "https://horizonte-rp.com/assets/gtalow.zip",
             "size": 0
           },
           "full": {
@@ -23,7 +23,7 @@
             "description": "Gráficos completos com mods dinâmicos.",
             "icon": "bi-display",
             "image": "http://horizontegames.com/api/assets/images/gta_high.png",
-            "url": "http://horizonte-rp.com/assets/gtahigh.zip",
+            "url": "https://horizonte-rp.com/assets/gtahigh.zip",
             "size": 0
           }
         }

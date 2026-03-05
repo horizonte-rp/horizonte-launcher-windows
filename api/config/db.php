@@ -7,13 +7,13 @@
 define('DB_HOST', '127.0.0.1');
 define('DB_NAME', 'horizonte');
 define('DB_USER', 'root');
-define('DB_PASS', '@horizonte@rp@');
+define('DB_PASS', 'Hz@Db2026sEcUrE');
 
 // Chave secreta para validar assinaturas (DEVE ser igual ao launcher)
 define('SECRET_KEY', 'horizonte-launcher-secret-2024');
 
 // Chave secreta para endpoints admin (DEVE ser igual ao servidor SA-MP)
-define('ADMIN_API_KEY', 'HqW5Rxj81jaMt69y31qSXnhrtKIfA6');
+define('ADMIN_API_KEY', 'JCRsXXA4nnSo6QIP0ABS7KlnPyY27KkU');
 
 /**
  * Conexão PDO com o banco de dados

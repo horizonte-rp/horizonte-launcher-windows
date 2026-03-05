@@ -12,7 +12,7 @@ header('Access-Control-Allow-Origin: *');
 // Configuração do Launcher
 $config = [
     // Versão atual do launcher (altere quando lançar nova versão)
-    'version' => '1.1.8',
+    'version' => '1.1.9',
 
     // URL para download da nova versão (quando disponível)
     'updateUrl' => 'http://horizontegames.com/api/downloads/Horizonte%20Launcher.exe',
@@ -53,7 +53,7 @@ $config = [
                         'description' => 'Gráficos reduzidos, sem mods. Prioriza FPS.',
                         'icon' => 'bi-speedometer',
                         'image' => 'http://horizontegames.com/api/assets/images/gta_low.png',
-                        'url' => 'http://horizonte-rp.com/assets/gtalow.zip',
+                        'url' => 'http://horizontegames.com/api/assets/games/gtalow.zip',
                         'size' => 0
                     ],
                     'full' => [
@@ -61,7 +61,7 @@ $config = [
                         'description' => 'Gráficos completos com mods dinâmicos.',
                         'icon' => 'bi-display',
                         'image' => 'http://horizontegames.com/api/assets/images/gta_high.png',
-                        'url' => 'http://horizonte-rp.com/assets/gtahigh.zip',
+                        'url' => 'http://horizontegames.com/api/assets/games/gtahigh.zip',
                         'size' => 0
                     ]
                 ]

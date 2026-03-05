@@ -35,7 +35,7 @@ require_once __DIR__ . '/../config/db.php';
 // Depois substitua o valor de ADMIN_PASSWORD_HASH abaixo.
 // ==========================================
 define('ADMIN_USERNAME', 'admin');
-define('ADMIN_PASSWORD_HASH', password_hash('@Lk4t10p#', PASSWORD_BCRYPT));
+define('ADMIN_PASSWORD_HASH', password_hash('dYVoroqjcHXQob58', PASSWORD_BCRYPT));
 // ^^^ ATENÇÃO: Em produção, substitua por um hash fixo gerado previamente!
 // Exemplo: define('ADMIN_PASSWORD_HASH', '$2y$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
 

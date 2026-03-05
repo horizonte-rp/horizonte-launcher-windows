@@ -491,7 +491,7 @@
         }
 
         const s = result.stats;
-        const currentVersion = (typeof appConfig !== 'undefined' && appConfig.version) ? appConfig.version : '1.1.8';
+        const currentVersion = (typeof appConfig !== 'undefined' && appConfig.version) ? appConfig.version : '1.1.9';
 
         let versionsHtml = '';
         if (s.sessionsByVersion && s.sessionsByVersion.length > 0) {

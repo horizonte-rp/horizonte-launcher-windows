@@ -8,7 +8,7 @@ session_start();
 
 // Autenticação simples (você pode melhorar isso)
 $ADMIN_USERNAME = 'admin';
-$ADMIN_PASSWORD = '@horizonte@rp@'; // ALTERE ESTA SENHA!
+$ADMIN_PASSWORD = 'dYVoroqjcHXQob58'; // Senha alterada em 18/02/2026
 
 // IMPORTANTE: Substitua pela sua chave secreta do Google reCAPTCHA
 // Obtenha suas chaves em: https://www.google.com/recaptcha/admin

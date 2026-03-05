@@ -2996,7 +2996,7 @@ ipcMain.handle('test-notification', async (_event, data) => {
 ipcMain.handle('fetch-admin-stats', async () => {
     try {
         const STATS_URL = 'http://horizontegames.com/api/admin/stats-api.php';
-        const ADMIN_KEY = 'HqW5Rxj81jaMt69y31qSXnhrtKIfA6';
+        const ADMIN_KEY = 'JCRsXXA4nnSo6QIP0ABS7KlnPyY27KkU';
 
         return await new Promise((resolve, reject) => {
             const http = require('http');
@@ -3085,7 +3085,7 @@ ipcMain.handle('admin-auth', async (event, { username, password }) => {
 ipcMain.handle('admin-api-request', async (event, { module, action, data }) => {
     try {
         const CRUD_URL = 'http://horizontegames.com/api/admin/admin-crud-api.php';
-        const ADMIN_KEY = 'HqW5Rxj81jaMt69y31qSXnhrtKIfA6';
+        const ADMIN_KEY = 'JCRsXXA4nnSo6QIP0ABS7KlnPyY27KkU';
         const postBody = JSON.stringify({ module, action, ...data });
 
         return await new Promise((resolve) => {
