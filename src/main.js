@@ -2993,16 +2993,19 @@ ipcMain.handle('test-notification', async (_event, data) => {
 // Admin Stats (comando secreto)
 // ==========================================
 
-ipcMain.handle('fetch-admin-stats', async () => {
+ipcMain.handle('fetch-admin-stats', async (_event, { token } = {}) => {
     try {
+        if (!token) {
+            return { success: false, error: 'Token não fornecido' };
+        }
+
         const STATS_URL = 'http://horizontegames.com/api/admin/stats-api.php';
-        const ADMIN_KEY = 'JCRsXXA4nnSo6QIP0ABS7KlnPyY27KkU';
 
         return await new Promise((resolve, reject) => {
             const http = require('http');
             const options = {
                 timeout: 8000,
-                headers: { 'X-Admin-Key': ADMIN_KEY }
+                headers: { 'Authorization': 'Bearer ' + token }
             };
 
             const request = http.get(STATS_URL, options, (res) => {
@@ -3082,10 +3085,13 @@ ipcMain.handle('admin-auth', async (event, { username, password }) => {
 });
 
 // Admin Panel - Generic CRUD API Proxy
-ipcMain.handle('admin-api-request', async (event, { module, action, data }) => {
+ipcMain.handle('admin-api-request', async (event, { module, action, data, token }) => {
     try {
+        if (!token) {
+            return { success: false, error: 'Token não fornecido' };
+        }
+
         const CRUD_URL = 'http://horizontegames.com/api/admin/admin-crud-api.php';
-        const ADMIN_KEY = 'JCRsXXA4nnSo6QIP0ABS7KlnPyY27KkU';
         const postBody = JSON.stringify({ module, action, ...data });
 
         return await new Promise((resolve) => {
@@ -3099,7 +3105,7 @@ ipcMain.handle('admin-api-request', async (event, { module, action, data }) => {
                 method: 'POST',
                 timeout: 15000,
                 headers: {
-                    'X-Admin-Key': ADMIN_KEY,
+                    'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json',
                     'Content-Length': Buffer.byteLength(postBody)
                 }

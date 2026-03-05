@@ -1,13 +1,13 @@
 <?php
 /**
  * Stats API - Endpoint JSON para estatísticas do launcher
- * Protegido por X-Admin-Key header
+ * Protegido por Bearer token ou X-Admin-Key
  */
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Admin-Key');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Key');
 
 // Preflight CORS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -15,15 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/validate_token.php';
 
-// Validar chave admin
-$adminKey = $_SERVER['HTTP_X_ADMIN_KEY'] ?? '';
-if ($adminKey !== ADMIN_API_KEY) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Acesso negado']);
-    exit;
-}
+// Validar acesso admin (token ou API key)
+requireAdminAuth();
 
 $pdo = getDB();
 if (!$pdo) {

@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin CRUD API - Endpoint JSON unificado para gerenciamento
- * Protegido por X-Admin-Key header
+ * Protegido por Bearer token ou X-Admin-Key
  *
  * Módulos: bans, notifications, devices, mods, news
  * Ações: list, create, update, delete, toggle, stats
@@ -10,22 +10,17 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Admin-Key');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Key');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/validate_token.php';
 
-// Validar chave admin
-$adminKey = $_SERVER['HTTP_X_ADMIN_KEY'] ?? '';
-if ($adminKey !== ADMIN_API_KEY) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'Acesso negado']);
-    exit;
-}
+// Validar acesso admin (token ou API key)
+requireAdminAuth();
 
 $pdo = getDB();
 if (!$pdo) {

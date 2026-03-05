@@ -1,6 +1,6 @@
 /**
  * Admin Panel - Painel de Gerenciamento Completo
- * Ctrl+Shift+F9 para abrir/fechar
+ * Painel de administracao interno
  *
  * Seções: Dashboard, Bans, Notificações, Dispositivos, Mods, Notícias
  */
@@ -73,8 +73,15 @@
     // API Helper
     // ==========================================
     async function apiRequest(module, action, data = {}) {
+        if (!authToken) {
+            return { success: false, error: 'Não autenticado' };
+        }
         try {
-            const result = await ipcRenderer.invoke('admin-api-request', { module, action, data });
+            const result = await ipcRenderer.invoke('admin-api-request', { module, action, data, token: authToken });
+            if (result && result.error && result.error.includes('expirado')) {
+                logout();
+                showToast('Sessão expirada. Faça login novamente.', 'error');
+            }
             return result;
         } catch (err) {
             return { success: false, error: err.message };
@@ -82,8 +89,11 @@
     }
 
     async function fetchDashboardStats() {
+        if (!authToken) {
+            return { success: false, error: 'Não autenticado' };
+        }
         try {
-            return await ipcRenderer.invoke('fetch-admin-stats');
+            return await ipcRenderer.invoke('fetch-admin-stats', { token: authToken });
         } catch (err) {
             return { success: false, error: err.message };
         }
@@ -348,7 +358,7 @@
         }
     }
 
-    // Atalho Ctrl+Shift+F9
+    // Atalho admin
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.shiftKey && e.key === 'F9') {
             e.preventDefault();
@@ -491,7 +501,7 @@
         }
 
         const s = result.stats;
-        const currentVersion = (typeof appConfig !== 'undefined' && appConfig.version) ? appConfig.version : '1.1.9';
+        const currentVersion = (typeof appConfig !== 'undefined' && appConfig.version) ? appConfig.version : '1.2.0';
 
         let versionsHtml = '';
         if (s.sessionsByVersion && s.sessionsByVersion.length > 0) {
